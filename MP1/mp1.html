@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Hello Animation</title>
+<meta charset="utf-8">
+</head>
+
+<script id="shader-vs" type="x-shader/x-vertex">#version 300 es
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+
+    in vec4 aVertexColor;
+    in vec3 aVertexPosition;
+    uniform mat4 uModelViewMatrix;
+    out vec4 vColor;
+
+    void main(void) {
+        gl_Position = uModelViewMatrix * vec4(aVertexPosition, 1.0);
+        vColor = aVertexColor;
+    }
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">#version 300 es
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+
+    in vec4 vColor;
+    out vec4 fragmentColor;
+
+    void main(void) {
+            fragmentColor = vColor;
+    }
+</script>
+
+<script src="gl-matrix-min.js"></script>
+<script src="mp1.js"></script>
+
+<body onload="startup();">
+  <canvas id="myGLCanvas" width="700" height="700"></canvas>
+</body>
+
+<p>Animation settings:</p>
+<div>
+  <input type="range" id="speed" name="speed" min="0" max="100" value="5">
+  <label for="speed">Rotation Speed</label> <br><br>
+  <input type="checkbox" id="random" checked>Random<br><br>
+  <input type="checkbox" id="rotation">Rotation<br><br>
+  <input type="checkbox" id="scaling">Scaling<br><br>
+  <input type="checkbox" id="translation">Translation<br><br>
+  <input type="checkbox" id="buffer">Change Buffer<br><br>
+  <p>Select an animation:</p>
+  <div>
+    <input type="radio" id="I" name="animation" value="I" checked>
+    <label for="I">Illinois Logo</label>
+  </div>
+  <div>
+    <input type="radio" id="MyAnimation" name="animation" value="MyAnimation">
+    <label for="MyAnimation"> Your Animation Name Here</label>
+  </div>
+</div>
+
+</html>
