@@ -12,5 +12,9 @@ For your first machine problem, you will create **two** animations:
 #### Animation
 1. Use 2 or more affine transformations (such as scaling, rotation, or translation). Use the glMatrix library to implement these as matrix transformations. These transformations should be applied to the vertices in the vertex shader using a uniform variable
 
+   02/15 - Scale & Translation ☑️ 1 point
+
 
 2. Implement another motion by directly changing the vertex positions in the vertex buffer. This means you create a new JavaScript array with vertex position. 
+
+   02/15 - Buffer change ☑️ 1point

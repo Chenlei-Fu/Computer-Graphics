@@ -1,6 +1,7 @@
 /**
  * @file A WebGL example drawing a Illini Logo with colors
  * @author Chenlei Fu <chenlei2@eillinois.edu>
+ * Note: Citation: https://illinois-cs418.github.io/assignments/mp1.html (HelloAnimation.html, HelloAnimation.js)
  *
  * Updated Spring 2021 to use WebGL 2.0 and GLSL 3.00
  */
@@ -32,20 +33,26 @@ var modelViewMatrix = glMatrix.mat4.create();
 /** @global Records time last frame was rendered */
 var previousTime = 0;
 
-/** @global Records time currentframe was rendered */
-var currentTime = 0;
-
-/** @global The state of animation */
-var state = 0;
-
 /** @global Scale Vector */
 var scaleVec = glMatrix.vec3.create();
+
+/** @global Translate Vector */
+var translateVec = glMatrix.vec3.create();
 
 /** @global The clock for counts */
 var clock = 0;
 
+/** @global angle for buffer change */
+var angle = 0;
 
+/** @global angle for shrink logo */
+var shrink = 0;
 
+/** @global angle for stretch logo */
+var stretch = 0;
+
+/** @global vertices for myillini logo */
+var vertices;
 
 
 
@@ -162,7 +169,7 @@ function setupLogoPosition() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
 
     // Define a triangle in clip coordinates.
-    const t = 30;
+    const t = 60;
     var orangeVertices = [
         /*
             __________________
@@ -305,7 +312,7 @@ function setupLogoPosition() {
         10.5/t, -15.5/t, 0.0,
     ];
 
-    var vertices = orangeVertices.concat(blueVertices);
+    vertices = orangeVertices.concat(blueVertices);
 
     // Populate the buffer with the position data.
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -391,22 +398,21 @@ function draw() {
  */
 function affine_scaling() {
     // Read the speed slider from the web page.
-    let speed = document.getElementById("speed").value;
-
-    let fac = degToRad(clock);
-    glMatrix.vec3.set(scaleVec, Math.cos(degToRad(fac)), Math.cos(degToRad(fac)), 1);
+    let scale = document.getElementById("scale").value*0.01;
+    glMatrix.vec3.set(scaleVec, scale, scale, 1);
     glMatrix.mat4.scale(modelViewMatrix, modelViewMatrix, scaleVec);
 }
 
 
 /**
  * Animates the logo by affine transformation with rotation
+ * Note: the implementation of rotation is cited from HelloAnimation.js
  */
-function affine_rotation() {
+function affine_rotation(currentTime) {
     // Read the speed slider from the web page.
     var speed = document.getElementById("speed").value;
     // Convert the time to seconds.
-    currentTime = new Date().getTime() * 0.001;
+    currentTime = new Date().getTime() * 0.01;
     // Subtract the previous time from the current time.
     var deltaTime = currentTime - previousTime;
     // Remember the current time for the next frame.
@@ -424,24 +430,71 @@ function affine_rotation() {
  * Animates the logo by affine transformation with rotation
  */
 function affine_translation() {
-
+    // Read the speed slider from the web page.
+    let value = document.getElementById("translate").value;
+    glMatrix.vec3.set(translateVec, value/100, value/100,0 );
+    glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
 }
 
+/**
+ * Implement another motion by directly changing the vertex positions in the vertex buffer.
+ */
+function dynamicBufferChange() {
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+
+    if(clock % 800 < 200) {
+        for(let i = 0; i < 90; i++) {
+            let x = Math.cos(degToRad(angle));
+            let y = Math.sin(degToRad(angle));
+            vertices[i*3] = vertices[i*3] + (x * 0.5);
+            vertices[i*3 + 1] = vertices[i*3 + 1] + (y* 0.5);
+        }
+    }
+    else if(clock % 800 >= 200 && clock % 800 < 400){
+        for(let i = 0; i < 90; i++) {
+            let y = Math.sin(degToRad(shrink));
+            vertices[i*3 + 1] = vertices[i*3 + 1] * (y);
+        }
+    }
+    else if(clock % 800 >= 400 && clock % 800 < 600) {
+        //stretch logo
+        for(let i = 0; i < 90; i++) {
+            let x = Math.sin(degToRad(stretch));
+            vertices[i*3] = vertices[i*3] * (x);
+        }
+    } else {
+        for(let i = 0; i < 90; i++) {
+            let x = Math.sin(degToRad(stretch));
+            let y = Math.sin(degToRad(shrink));
+            vertices[i*3] = vertices[i*3] * (x);
+            vertices[i*3 + 1] = vertices[i*3 + 1] * (y);
+        }
+    }
+
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+}
 
 /**
  * Animates the triangle by updating the ModelView matrix with a rotation
  * each frame.
  */
  function animate(currentTime) {
-
-
-
-
-    affine_rotation();
     setupBuffers();
 
+    // global variables updates:
+    angle = (angle + 10) % 360;
+    clock += 1;
+    shrink = (shrink + 2) % 360;
+    stretch = (stretch + 2) % 360;
+
+    dynamicBufferChange();
+    affine_rotation(currentTime);
+    affine_scaling();
+    affine_translation();
     // Draw the frame.
     draw();
+
 
     // Animate the next frame. The animate function is passed the current time in
     // milliseconds.
