@@ -9,13 +9,13 @@ For your first machine problem, you will create **two** animations:
 
 #### 🐙 My Final Graphics
 
-<img src = "/Users/charliefu/Library/Mobile Documents/com~apple~CloudDocs/Tutorial Resources/computer science/CS418/MPs/MP1/Illini.gif" alt = "drawing" width="600"/>
+<img src = "./Illini.gif" alt = "drawing" width="600"/>
 
 
 
 
 
-<img src = "/Users/charliefu/Library/Mobile Documents/com~apple~CloudDocs/Tutorial Resources/computer science/CS418/MPs/MP1/MyAnimation.gif" alt = "drawing" width="600"/>
+<img src = "./MyAnimation.gif" alt = "drawing" width="600"/>
 
 
 
