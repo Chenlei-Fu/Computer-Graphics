@@ -54,7 +54,8 @@ var stretch = 0;
 /** @global vertices for myillini logo */
 var vertices;
 
-
+/** @global The clock for counts (my animation) */
+var clock2 = 0;
 
 
 /**
@@ -155,6 +156,7 @@ function setupShaders() {
     gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
 }
 
+
 /**
  * Set up the buffers to hold the logo's vertex positions.
  */
@@ -212,7 +214,6 @@ function setupLogoPosition() {
 
 
     ];
-
 
     var blueVertices = [
         // Blue Top Bar
@@ -324,6 +325,7 @@ function setupLogoPosition() {
         vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 }
 
+
 /**
  * Set up the buffers to hold the logo's vertex colors.
  */
@@ -332,8 +334,8 @@ function setupLogoColor() {
     // Do the same steps for the color buffer.
     vertexColorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-    const blue = [19/225, 41/225, 75/225, 1.0];
-    const orange = [232/225, 74/225, 39/225, 1.0];
+    const blue = [19/255, 41/255, 75/255, 1.0];
+    const orange = [232/255, 74/255, 39/255, 1.0];
     var colors = [];
     for(let i = 0; i < 18; i++) {
         colors.push(...orange);
@@ -436,6 +438,7 @@ function affine_translation() {
     glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
 }
 
+
 /**
  * Implement another motion by directly changing the vertex positions in the vertex buffer.
  */
@@ -471,9 +474,149 @@ function dynamicBufferChange() {
         }
     }
 
-
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
 }
+
+
+/**
+ * My Animation:
+ * 1. set up position and color buffers
+ * 2. add animation: walk, cheer and take off
+ */
+function myAnimation() {
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+    const t = 60;
+    const tmp = 27;
+    var headVec = [
+        -20.0/t, 10.0/t, 0.0,
+        -40.0/t, 10.0/t, 0.0,
+        -20.0/t, -10.0/t, 0.0,
+        -20.0/t, -10.0/t, 0.0,
+        -40.0/t, -10.0/t, 0.0,
+        -40.0/t, 10.0/t, 0.0,
+    ];
+
+    var bodyVec = [
+        -35/t, -10/t, 0.0,
+        -35/t, -30/t, 0.0,
+        -25/t, -30/t, 0.0,
+        -35/t, -10/t, 0.0,
+        -25/t, -10/t, 0.0,
+        -25/t, -30/t, 0.0,
+
+        // middle
+        -35/t, -30/t, 0.0,
+        -25/t, -30/t, 0.0,
+        -30/t, -35/t, 0.0,
+    ];
+
+    var leftLegVec = [
+        // left leg
+        -35/t, -30/t, 0.0,
+        -30/t, -35/t, 0.0,
+        -45/t, -50/t, 0.0,
+    ];
+
+    var rightLegVec = [
+        -25/t, -30/t, 0.0,
+        -30/t, -35/t, 0.0,
+        -15/t, -50/t, 0.0,
+    ];
+
+    var leftHandVec = [
+        -35/t, -10/t, 0.0,
+        -35/t, -15/t, 0.0,
+        -45/t, -30/t, 0.0, // -45/t, -5/t, 0.0
+    ];
+
+    var rightHandVec = [
+        -25/t, -10/t, 0.0,
+        -25/t, -15/t, 0.0,
+        -15/t, -30/t, 0.0, // -15/t, -5/t, 0.0
+    ];
+
+    var position = headVec.concat(bodyVec, leftLegVec, rightLegVec, leftHandVec, rightHandVec);
+
+    if(clock2 < 20) {
+        glMatrix.vec3.set(scaleVec, 0.95, 0.95, 1);
+        glMatrix.vec3.set(translateVec, -0.05, 0.0, 0);
+        glMatrix.mat4.scale(modelViewMatrix, modelViewMatrix, scaleVec);
+        glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
+    }
+
+    else if(clock2 % 600 < 100) {
+        glMatrix.vec3.set(translateVec, 0.05, 0.0, 0);
+        glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
+    }
+
+    else if(clock2 % 600 >= 100 && clock2 % 600 < 185) {
+        glMatrix.vec3.set(translateVec, -0.05, 0.0, 0);
+        glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
+    }
+
+    else if(clock2 % 600 >= 185 && clock2 % 600 < 240) {
+        // raise hands
+        if(clock2 %5 !== 0) {
+            position[23*3] = -45/t;
+            position[23*3+1] = -5/t;
+            position[26*3] = -15/t;
+            position[26*3 + 1] = -5/t;
+        }
+    }
+
+    else if(clock2 % 600 >= 240 && clock2 % 600 < 320){
+        // jump
+        if(clock2 %5 !== 0) {
+            position[17*3 + 1] = -30/t;
+            position[20*3+1] = -30/t;
+        }
+    }
+
+    else if(clock2 % 600 >= 320 && clock2 % 600 < 376) {
+        for(let i = 12; i < 15; i++) {
+            position[i*3 + 1] = position[i*3 + 1] - 4.0/t;
+        }
+    }
+
+    else if(clock2 % 600 >= 376 && clock2 % 600 < 432) {
+        for(let i = 12; i < 15; i++) {
+            position[i*3 + 1] = position[i*3 + 1] + 0.5/t;
+        }
+    }
+
+    else if(clock2 % 600 >= 432 && clock2 % 600 < 512){
+        glMatrix.vec3.set(translateVec, 0.05, 0.0, 0);
+        glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
+    }
+
+    else {
+        glMatrix.vec3.set(translateVec, -0.05, 0.0, 0);
+        glMatrix.mat4.translate(modelViewMatrix, modelViewMatrix, translateVec);
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.DYNAMIC_DRAW);
+    vertexPositionBuffer.itemSize = 3;
+    vertexPositionBuffer.numberOfItems = tmp;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+    const pink = [255/255, 199/255, 199/255, 1.0];
+    const purple = [135/255, 133/255, 162/255, 1.0];
+    const lightpink = [255/255, 226/255,  226/255, 1.0];
+    var logoColors = [];
+
+    for(let i = 0; i < tmp; i++) {
+        if(i < 6) logoColors.push(...lightpink);
+        else if(6 <= i && i < 12) logoColors.push(...purple);
+        else if(12 <= i && i < 15) logoColors.push(...pink);
+        else if(15 <= i && i < 21) logoColors.push(...purple);
+        else logoColors.push(...lightpink);
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(logoColors), gl.STATIC_DRAW);
+    vertexColorBuffer.itemSize = 4;
+    vertexColorBuffer.numItems = tmp;
+}
+
 
 /**
  * Animates the triangle by updating the ModelView matrix with a rotation
@@ -482,19 +625,38 @@ function dynamicBufferChange() {
  function animate(currentTime) {
     setupBuffers();
 
-    // global variables updates:
-    angle = (angle + 10) % 360;
-    clock += 1;
-    shrink = (shrink + 2) % 360;
-    stretch = (stretch + 2) % 360;
+    if (document.getElementById("I").checked === true) {
+        // global variables updates:
+        angle = (angle + 10) % 360;
+        clock += 1;
+        shrink = (shrink + 2) % 360;
+        stretch = (stretch + 2) % 360;
 
-    dynamicBufferChange();
-    affine_rotation(currentTime);
-    affine_scaling();
-    affine_translation();
+        // animation functions
+        dynamicBufferChange();
+        affine_rotation(currentTime);
+        affine_scaling();
+        affine_translation();
+
+        // reset for my animation
+        clock2 = 0; //set clock2 as zero
+
+    } else {
+        // reset for my animation
+        if(clock2 === 0) {
+            glMatrix.mat4.fromZRotation(modelViewMatrix, degToRad(0));
+        }
+
+        // global variables updates:
+        clock2 += 1;
+        stretch = (stretch + 8) % 360;
+
+        // animation functions
+        myAnimation();
+    }
+
     // Draw the frame.
     draw();
-
 
     // Animate the next frame. The animate function is passed the current time in
     // milliseconds.
@@ -515,4 +677,3 @@ function dynamicBufferChange() {
   requestAnimationFrame(animate);
   gl.enable(gl.DEPTH_TEST);
 }
-
