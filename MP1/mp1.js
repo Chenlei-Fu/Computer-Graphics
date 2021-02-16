@@ -605,11 +605,11 @@ function myAnimation() {
     var logoColors = [];
 
     for(let i = 0; i < tmp; i++) {
-        if(i < 6) logoColors.push(...lightpink);
+        if(i < 6) logoColors.push(...pink);
         else if(6 <= i && i < 12) logoColors.push(...purple);
         else if(12 <= i && i < 15) logoColors.push(...pink);
         else if(15 <= i && i < 21) logoColors.push(...purple);
-        else logoColors.push(...lightpink);
+        else logoColors.push(...pink);
     }
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(logoColors), gl.STATIC_DRAW);
@@ -673,7 +673,7 @@ function myAnimation() {
   gl = createGLContext(canvas);
   setupShaders();
   setupBuffers();
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  gl.clearColor(245/255, 245/255, 245/255, 1.0);
   requestAnimationFrame(animate);
   gl.enable(gl.DEPTH_TEST);
 }

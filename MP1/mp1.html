@@ -3,6 +3,9 @@
 <head>
 <title>Hello Animation</title>
 <meta charset="utf-8">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </head>
 
 <script id="shader-vs" type="x-shader/x-vertex">#version 300 es
@@ -41,27 +44,40 @@
 <script src="gl-matrix-min.js"></script>
 <script src="mp1.js"></script>
 
-<body onload="startup();">
-  <canvas id="myGLCanvas" width="800" height="800"></canvas>
+<div class="container">
+  <p class="text-center h1">🧩 MP1: Dancing Logo</p>
+</div>
+
+<body onload="startup();" style="background-color: #f5f5f5">
+  <canvas id="myGLCanvas" width="800" height="800" style="margin: auto; padding: 0; display: block"></canvas>
 </body>
 
-<p>Animation settings:</p>
-<div>
-  <input type="range" id="speed" name="speed" min="0" max="100" value="0">
-  <label for="speed">Rotation Speed</label> <br><br>
-  <input type="range" id="scale" name="scale" min="0" max="100" value="100">
-  <label for="scale">Scale Value</label> <br><br>
-  <input type="range" id="translate" name="translate" min="0" max="100" value="0">
-  <label for="translate">Translate Degree</label> <br><br>
-  <p>Select an animation:</p>
-  <div>
-    <input type="radio" id="I" name="animation" value="I">
-    <label for="I">Illinois Logo</label>
+
+<div class="container">
+
+  <p class="h3">⚙️ Select an animation:</p>
+  <div style="margin-bottom: 40px">
+    <div>
+      <input type="radio" id="I" name="animation" value="I">
+      <label for="I">Illinois Logo</label>
+    </div>
+    <div>
+      <input type="radio" id="MyAnimation" name="animation" value="MyAnimation" checked>
+      <label for="MyAnimation"> Walk, cheer, take off </label>
+    </div>
   </div>
+
   <div>
-    <input type="radio" id="MyAnimation" name="animation" value="MyAnimation" checked>
-    <label for="MyAnimation"> Walk, cheer, take off </label>
+    <p class="h3">⚙️ Animation settings (for MyIllini logo only):</p>
+    <input type="range" id="speed" class="form-range" name="speed" min="0" max="100" value="0">
+    <label for="speed" class="form-label">Rotation Speed</label> <br><br>
+    <input type="range" id="scale" name="scale" min="0" max="100" value="100">
+    <label for="scale">Scale Value</label> <br><br>
+    <input type="range" id="translate" name="translate" min="0" max="100" value="0">
+    <label for="translate">Translate Degree</label> <br><br>
   </div>
+
+  <p style="margin: 60px auto; text-align: center;">Copyright &copy;2021 by Chenlei Fu</p>
 </div>
 
 </html>
