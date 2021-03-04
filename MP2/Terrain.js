@@ -68,6 +68,9 @@ class Terrain {
      */
     setVertex(v, i) {
         // MP2: Implement this function!
+        this.positionData[i * 3 + 0] = v[0];
+        this.positionData[i * 3 + 1] = v[1];
+        this.positionData[i * 3 + 2] = v[2]; 
     }
     
 
@@ -78,14 +81,47 @@ class Terrain {
      */
     getVertex(v, i) {
         // MP2: Implement this function!
+        v[0] = this.positionData[i * 3 + 0];
+        v[1] = this.positionData[i * 3 + 1];
+        v[2] = this.positionData[i * 3 + 2];
     }
 
 
     /**
-     * This function does nothing.
+     * fill out position data and face data
      */    
     generateTriangles() {
         // MP2: Implement the rest of this function!
+
+        // positionData: 1D array of floats
+        var deltaX = (this.maxX - this.minX) / this.div
+        var deltaY = (this.maxY - this.minY) / this.div
+        for (var i = 0; i <= this.div; i++) {
+            for(var j = 0; j <= this.div; j++) {
+                this.positionData.push(this.minX + deltaX * j);
+                this.positionData.push(this.minY + deltaY * i);
+                this.positionData.push(0);
+            }
+        }
+
+
+        // faceData
+        for (var i = 0; i < this.div; i++) {
+            for(var j = 0; j < this.div; j++) {
+                // bottom left index
+                var start_idx = (i * (this.div + 1)) + j;
+
+                // trianguler 1
+                this.faceData.push(start_idx);
+                this.faceData.push(start_idx + 1);
+                this.faceData.push(start_idx + this.div + 1);
+
+                // triangular 2
+                this.faceData.push(start_idx + 1);
+                this.faceData.push(start_idx + this.div + 2);
+                this.faceData.push(start_idx + this.div + 1);
+            }
+        }
 
         // We'll need these to set up the WebGL buffers.
         this.numVertices = this.positionData.length/3;
