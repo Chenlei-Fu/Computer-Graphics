@@ -3,20 +3,20 @@
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP2 at the University of Illinois at
  * Urbana-Champaign.
- * 
+ *
  * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
- * 
+ *
  * You'll need to implement the following functions:
  * setVertex(v, i) - convenient vertex access for 1-D array
  * getVertex(v, i) - convenient vertex access for 1-D array
  * generateTriangles() - generate a flat grid of triangles
  * shapeTerrain() - shape the grid into more interesting terrain
  * calculateNormals() - calculate normals after warping terrain
- * 
+ *
  * Good luck! Come to office hours if you get stuck!
  */
 
-class Terrain {   
+class Terrain {
     /**
      * Initializes the members of the Terrain object.
      * @param {number} div Number of triangles along the x-axis and y-axis.
@@ -31,7 +31,7 @@ class Terrain {
         this.minY = minY;
         this.maxX = maxX;
         this.maxY = maxY;
-        
+
         // Allocate the vertex array
         this.positionData = [];
         // Allocate the normal array.
@@ -41,10 +41,10 @@ class Terrain {
         // Allocate an array for edges so we can draw a wireframe.
         this.edgeData = [];
         console.log("Terrain: Allocated buffers");
-        
+
         this.generateTriangles();
         console.log("Terrain: Generated triangles");
-        
+
         this.generateLines();
         console.log("Terrain: Generated lines");
 
@@ -55,9 +55,9 @@ class Terrain {
         console.log("Terrain: Generated normals");
 
         // You can use this function for debugging your buffers:
-        // this.printBuffers();
+        this.printBuffers();
     }
-    
+
 
     //-------------------------------------------------------------------------
     // Vertex access and triangle generation - your code goes here!
@@ -68,11 +68,11 @@ class Terrain {
      */
     setVertex(v, i) {
         // MP2: Implement this function!
-        this.positionData[i * 3 + 0] = v[0];
+        this.positionData[i * 3] = v[0];
         this.positionData[i * 3 + 1] = v[1];
-        this.positionData[i * 3 + 2] = v[2]; 
+        this.positionData[i * 3 + 2] = v[2];
     }
-    
+
 
     /**
      * Returns the x,y,z coords of the ith vertex.
@@ -81,7 +81,7 @@ class Terrain {
      */
     getVertex(v, i) {
         // MP2: Implement this function!
-        v[0] = this.positionData[i * 3 + 0];
+        v[0] = this.positionData[i * 3];
         v[1] = this.positionData[i * 3 + 1];
         v[2] = this.positionData[i * 3 + 2];
     }
@@ -89,37 +89,35 @@ class Terrain {
 
     /**
      * fill out position data and face data
-     */    
+     */
     generateTriangles() {
         // MP2: Implement the rest of this function!
 
         // positionData: 1D array of floats
-        var deltaX = (this.maxX - this.minX) / this.div
-        var deltaY = (this.maxY - this.minY) / this.div
-        for (var i = 0; i <= this.div; i++) {
-            for(var j = 0; j <= this.div; j++) {
+        const deltaX = (this.maxX - this.minX) / this.div;
+        const deltaY = (this.maxY - this.minY) / this.div;
+        for (let i = 0; i <= this.div; i++) {
+            for(let j = 0; j <= this.div; j++) {
                 this.positionData.push(this.minX + deltaX * j);
                 this.positionData.push(this.minY + deltaY * i);
                 this.positionData.push(0);
+
+                this.normalData.push(0);
+                this.normalData.push(0);
+                this.normalData.push(0);
             }
         }
 
 
         // faceData
-        for (var i = 0; i < this.div; i++) {
-            for(var j = 0; j < this.div; j++) {
+        for (let i = 0; i < this.div; i++) {
+            for(let j = 0; j < this.div; j++) {
                 // bottom left index
-                var start_idx = (i * (this.div + 1)) + j;
-
-                // trianguler 1
-                this.faceData.push(start_idx);
-                this.faceData.push(start_idx + 1);
-                this.faceData.push(start_idx + this.div + 1);
-
-                // triangular 2
-                this.faceData.push(start_idx + 1);
-                this.faceData.push(start_idx + this.div + 2);
-                this.faceData.push(start_idx + this.div + 1);
+                let bottomLeft = (i * (this.div + 1)) + j;
+                let triangular1 = [bottomLeft, bottomLeft+1, bottomLeft + this.div + 1];
+                let triangular2 = [bottomLeft + 1, bottomLeft + this.div + 2, bottomLeft + this.div + 1];
+                this.faceData.push(...triangular1);
+                this.faceData.push(...triangular2);
             }
         }
 
@@ -130,10 +128,74 @@ class Terrain {
 
 
     /**
-     * This function does nothing.
+     * Construct plane, raise and lower vertices, parameters
      */
     shapeTerrain() {
         // MP2: Implement this function!
+
+        // set up some variables
+        let iter = 100
+        let delta = 0.01
+        let H = 0.01435529297
+
+        for(let i = 0; i < iter; i++) {
+            // construct a random fault plane
+            let p = this.generateRandomPoint();
+            let n = this.generateRandomNormalVec();
+
+            // raise and lower vertices
+            for(let j = 0; j < this.numVertices; j++) {
+                // step1: get vertex b, test which side (b - p) * n >= 0
+                let b = glMatrix.vec3.create();
+                this.getVertex(b, j);
+
+                let sub = glMatrix.vec3.create();
+                glMatrix.vec3.subtract(sub, b, p);
+
+                let dist = glMatrix.vec3.distance(b, p);
+
+                let funcValue = this.calculateCoefficientFunction(dist);
+
+                if (glMatrix.vec3.dot(sub, n) > 0)
+                    b[2] += delta * funcValue
+                else
+                    b[2] -= delta * funcValue
+
+                this.setVertex(b, j);
+            }
+            delta = delta / (2**H);
+        }
+    }
+
+
+    /**
+     * Generate random point p in the rectangle <xMin, yMin, 0><xMax, yMax, 0>
+     * @return: gl.vec3 object with calculated random x and y
+     */
+    generateRandomPoint() {
+        let p = glMatrix.vec3.create();
+        let x = Math.random() * (this.maxX - this.minX) + this.minX;
+        let y = Math.random() * (this.maxY - this.minY) + this.minY;
+        glMatrix.vec3.set(p, x, y, 0);
+        return p;
+    }
+
+    /**
+     * Generate random normal vector for the plane <x, y, 0>
+     * @return: gl.vec3 object with calculated random x and y
+     */
+    generateRandomNormalVec() {
+        let tmp = glMatrix.vec2.create()
+        tmp = glMatrix.vec2.random(tmp);
+        return glMatrix.vec3.fromValues(tmp[0], tmp[1], 0);
+    }
+
+
+    calculateCoefficientFunction(r) {
+        let bottomLeft = glMatrix.vec3.fromValues(this.minX, this.minY, 0);
+        let topRight = glMatrix.vec3.fromValues(this.maxX, this.maxY, 0);
+        let R = glMatrix.vec3.distance(topRight, bottomLeft);
+        return Math.pow(1 - Math.pow(r/R, 2), 2);
     }
 
 
@@ -142,7 +204,7 @@ class Terrain {
      */
     calculateNormals() {
         // MP2: Implement this function!
-       
+
     }
 
 
@@ -157,10 +219,10 @@ class Terrain {
             var fid = f*3;
             this.edgeData.push(this.faceData[fid]);
             this.edgeData.push(this.faceData[fid+1]);
-            
+
             this.edgeData.push(this.faceData[fid+1]);
             this.edgeData.push(this.faceData[fid+2]);
-            
+
             this.edgeData.push(this.faceData[fid+2]);
             this.edgeData.push(this.faceData[fid]);
         }
@@ -178,7 +240,7 @@ class Terrain {
 
         // Create the position buffer and load it with the position data.
         this.vertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);      
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.positionData),
                       gl.STATIC_DRAW);
         this.vertexPositionBuffer.itemSize = 3;
@@ -187,10 +249,10 @@ class Terrain {
 
         // Link the position buffer to the attribute in the shader program.
         gl.vertexAttribPointer(shaderProgram.locations.vertexPosition,
-                               this.vertexPositionBuffer.itemSize, gl.FLOAT, 
+                               this.vertexPositionBuffer.itemSize, gl.FLOAT,
                                false, 0, 0);
         gl.enableVertexAttribArray(shaderProgram.locations.vertexPosition);
-    
+
         // Specify normals to be able to do lighting calculations
         this.vertexNormalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexNormalBuffer);
@@ -202,10 +264,10 @@ class Terrain {
 
         // Link the normal buffer to the attribute in the shader program.
         gl.vertexAttribPointer(shaderProgram.locations.vertexNormal,
-                               this.vertexNormalBuffer.itemSize, gl.FLOAT, 
+                               this.vertexNormalBuffer.itemSize, gl.FLOAT,
                                false, 0, 0);
         gl.enableVertexAttribArray(shaderProgram.locations.vertexNormal);
-    
+
         // Set up the buffer of indices that tells WebGL which vertices are
         // part of which triangles.
         this.triangleIndexBuffer = gl.createBuffer();
@@ -215,7 +277,7 @@ class Terrain {
         this.triangleIndexBuffer.itemSize = 1;
         this.triangleIndexBuffer.numItems = this.faceData.length;
         console.log("Loaded ", this.triangleIndexBuffer.numItems, " triangles.");
-    
+
         // Set up the index buffer for drawing edges.
         this.edgeIndexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.edgeIndexBuffer);
@@ -223,14 +285,14 @@ class Terrain {
                       gl.STATIC_DRAW);
         this.edgeIndexBuffer.itemSize = 1;
         this.edgeIndexBuffer.numItems = this.edgeData.length;
-        
+
         // Unbind everything; we want to bind the correct element buffer and
         // VAO when we want to draw stuff
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         gl.bindVertexArray(null);
     }
-    
+
 
     //-------------------------------------------------------------------------
     // Rendering functions (run every frame in draw())
@@ -243,7 +305,7 @@ class Terrain {
         gl.drawElements(gl.TRIANGLES, this.triangleIndexBuffer.numItems,
                         gl.UNSIGNED_INT,0);
     }
-    
+
 
     /**
      * Renders the terrain to the screen as edges, wireframe style.
@@ -252,7 +314,7 @@ class Terrain {
         gl.bindVertexArray(this.vertexArrayObject);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.edgeIndexBuffer);
         gl.drawElements(gl.LINES, this.edgeIndexBuffer.numItems,
-                        gl.UNSIGNED_INT,0);   
+                        gl.UNSIGNED_INT,0);
     }
 
 
@@ -263,20 +325,27 @@ class Terrain {
      */
     printBuffers() {
         for (var i = 0; i < this.numVertices; i++) {
-            console.log("v ", this.positionData[i*3], " ", 
+            console.log("v ", this.positionData[i*3], " ",
                               this.positionData[i*3 + 1], " ",
                               this.positionData[i*3 + 2], " ");
         }
         for (var i = 0; i < this.numVertices; i++) {
-            console.log("n ", this.normalData[i*3], " ", 
+            console.log("n ", this.normalData[i*3], " ",
                               this.normalData[i*3 + 1], " ",
                               this.normalData[i*3 + 2], " ");
         }
         for (var i = 0; i < this.numFaces; i++) {
-            console.log("f ", this.faceData[i*3], " ", 
+            console.log("f ", this.faceData[i*3], " ",
                               this.faceData[i*3 + 1], " ",
                               this.faceData[i*3 + 2], " ");
-        }  
+        }
     }
 
 } // class Terrain
+//
+// var glMatrix = require('gl-matrix');
+// // const { mat4, vec3 } = gl;
+//
+// var terrain = new Terrain(3, 0, 3, 0, 3);
+// terrain.shapeTerrain();
+
