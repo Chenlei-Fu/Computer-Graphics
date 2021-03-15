@@ -101,10 +101,6 @@ class Terrain {
                 this.positionData.push(this.minX + deltaX * j);
                 this.positionData.push(this.minY + deltaY * i);
                 this.positionData.push(0);
-
-                this.normalData.push(0);
-                this.normalData.push(0);
-                this.normalData.push(0);
             }
         }
 
@@ -136,7 +132,7 @@ class Terrain {
         // set up some variables
         let iter = 100
         let delta = 0.01
-        let H = 0.01435529297
+        let H = 0.0143
 
         for(let i = 0; i < iter; i++) {
             // construct a random fault plane
@@ -200,11 +196,91 @@ class Terrain {
 
 
     /**
-     * This function does nothing.
+     * Calculate the normals for each triangle
+     * 1. generate per-vertex normals
+     * 2. triangle area-weighted average
      */
     calculateNormals() {
         // MP2: Implement this function!
 
+        // initialize an NArray containing M normals
+        let normals = [];
+        for(let i = 0; i < this.numVertices; i++) {
+            normals.push([0, 0, 0]);
+        }
+
+        // iterate all triangles
+        for(let i = 0; i < this.numFaces; i++) {
+            let indices = this.getTriangleVertexByIndex(i);
+            let vertices = this.createAndGetPosDataByIndex(indices);
+            let N = this.computeNormalForTriangles(vertices[0], vertices[1], vertices[2]);
+
+            // average vertex normals by scale with factor 0.5
+            glMatrix.vec3.scale(N, N, 0.5);
+
+            indices.forEach(function(index) {
+                normals[index] = normals[index].map((a, i) => a + N[i]);
+            })
+        }
+
+        // normalize each normal in N array to unit length
+        for(let i = 0; i < this.numVertices; i++) {
+            let tmp = glMatrix.vec3.fromValues(normals[i][0], normals[i][1], normals[i][2]);
+            glMatrix.vec3.normalize(tmp, tmp);
+            this.normalData.push(...tmp);
+        }
+    }
+
+
+
+    /**
+     * Get Triangle's Vertex by Index
+     * @param idx: the index of face data
+     * @return: an array of triangular vertex at this index
+     */
+    getTriangleVertexByIndex(idx) {
+        if(idx < 0 || idx >= this.numFaces) {
+            throw 'Invalid idx!';
+        }
+        let res = [];
+        for(let i = 0; i < 3; i++) {
+            res.push(this.faceData[idx * 3 + i]);
+        }
+        return res;
+    }
+
+
+    /**
+     * Computer Normal N for the Triangle using N = (v2 - v1) cross (v3 - v1)
+     * @param v1: the first vector of the triangle
+     * @param v2: the second vector of the triangle
+     * @param v3: the third vector of the triangle
+     * @return cross: the cross product of (v2 - v1) and (v3 - v1)
+     */
+    computeNormalForTriangles(v1, v2, v3) {
+        let sub1 = glMatrix.vec3.create();
+        let sub2 = glMatrix.vec3.create();
+        glMatrix.vec3.subtract(sub1, v2, v1);
+        glMatrix.vec3.subtract(sub2, v3, v1);
+        let res = glMatrix.vec3.create();
+        glMatrix.vec3.cross(res, sub1, sub2);
+        return res;
+    }
+
+
+    /**
+     * Create vec3 object and get the vertex position data by index
+     * @param indices of face data
+     * @return vec3 object
+     */
+    createAndGetPosDataByIndex(indices) {
+        let res = []
+        for (let i = 0; i < indices.length; i++) {
+            let tmp = glMatrix.vec3.create();
+            this.getVertex(tmp, indices[i]);
+            res.push(tmp);
+        }
+        return res;
     }
 
 
@@ -343,9 +419,10 @@ class Terrain {
 
 } // class Terrain
 //
-// var glMatrix = require('gl-matrix');
-// // const { mat4, vec3 } = gl;
-//
-// var terrain = new Terrain(3, 0, 3, 0, 3);
-// terrain.shapeTerrain();
+
+var glMatrix = require('gl-matrix');
+// const { mat4, vec3 } = gl;
+
+var terrain = new Terrain(2, 0, 4, 0, 4);
+terrain.calculateNormals();
 
