@@ -51,6 +51,12 @@ var kEdgeBlack = [0.0, 0.0, 0.0];
 /** @global Edge color for white wireframe */
 var kEdgeWhite = [0.7, 0.7, 0.7];
 
+/** @global Previous time */
+var previousTime = new Date().getTime() * 0.0001;
+
+/** @global rotation Angle */
+var rotAngle = 0;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -196,7 +202,7 @@ function setupShaders() {
 /**
  * Draws the terrain to the screen.
  */
-function draw() {
+function draw(currentTime) {
   // Transform the clip coordinates so the render fills the canvas dimensions.
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   // Clear the color buffer and the depth buffer.
@@ -210,9 +216,25 @@ function draw() {
                             near, far);
   
   // Generate the view matrix using lookat.
-  const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, -1.0);
-  const eyePt = glMatrix.vec3.fromValues(0.0, 0.0, 3.0);
-  const up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
+
+  // calculate eye Pt factor & referenced by MP1.js
+  var deltaTime = currentTime * 0.0001 - previousTime;
+  previousTime = currentTime * 0.0001;
+  rotAngle = (rotAngle + deltaTime) % 360;
+  eyeXPos = 2.5 * Math.cos(rotAngle);
+  eyeYPos = 2.5 * Math.sin(rotAngle);
+  eyeXPos_ = 2.5 * Math.cos(-rotAngle);
+  eyeYPos_ = 2.5 * Math.sin(-rotAngle);
+  var intCurTime = Math.round(currentTime);
+
+  if(intCurTime % 10000 < 5000) {
+    var eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 0.8);
+  } else {
+    var eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 0.8);
+  }
+
+  const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
+  const up = glMatrix.vec3.fromValues(0.0, 0, 1.0);
   glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
 
   setMatrixUniforms();
@@ -295,7 +317,7 @@ function setLightUniforms(a, d, s, loc) {
  */
  function animate(currentTime) {
   // Draw the frame.
-  draw();
+  draw(currentTime);
   // Animate the next frame. 
   requestAnimationFrame(animate);
 }

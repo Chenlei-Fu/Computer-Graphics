@@ -420,9 +420,9 @@ class Terrain {
 } // class Terrain
 //
 
-var glMatrix = require('gl-matrix');
-// const { mat4, vec3 } = gl;
+// var glMatrix = require('gl-matrix');
+// // const { mat4, vec3 } = gl;
 
-var terrain = new Terrain(2, 0, 4, 0, 4);
-terrain.calculateNormals();
+// var terrain = new Terrain(2, 0, 4, 0, 4);
+// terrain.calculateNormals();
 
