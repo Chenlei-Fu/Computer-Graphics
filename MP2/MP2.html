@@ -37,8 +37,8 @@ out vec3 vertexNormalView;
 
 void main(void) {
     // Transform the vertex position and normal to view coordinates
-    vec3 vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
-    vec3 vertexNormalView = normalize(normalMatrix * vertexNormal);
+    vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
+    vertexNormalView = normalize(normalMatrix * vertexNormal);
 
     gl_Position =
         projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);

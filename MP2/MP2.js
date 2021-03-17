@@ -3,7 +3,7 @@
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP2 at the University of Illinois at
  * Urbana-Champaign.
- * 
+ *
  * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
  */
 
@@ -81,7 +81,7 @@ function startup() {
   setupShaders();
 
   // Let the Terrain object set up its own buffers.
-  myTerrain = new Terrain(16, -1, 1, -1, 1);
+  myTerrain = new Terrain(84, -1, 1, -1, 1);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
@@ -116,14 +116,14 @@ function createGLContext(canvas) {
  */
 function loadShaderFromDOM(id) {
   var shaderScript = document.getElementById(id);
-    
+
   // Return null if we don't find an element with the specified id
   if (!shaderScript) {
     return null;
   }
-    
+
   var shaderSource = shaderScript.text;
-  
+
   var shader;
   if (shaderScript.type == "x-shader/x-fragment") {
     shader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -132,15 +132,15 @@ function loadShaderFromDOM(id) {
   } else {
     return null;
   }
-  
+
   gl.shaderSource(shader, shaderSource);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert(gl.getShaderInfoLog(shader));
     return null;
-  } 
-  return shader; 
+  }
+  return shader;
 }
 
 
@@ -151,7 +151,7 @@ function setupShaders() {
   // Compile the shaders' source code.
   vertexShader = loadShaderFromDOM("shader-vs");
   fragmentShader = loadShaderFromDOM("shader-fs");
-  
+
   // Link the shaders together into a program.
   shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
@@ -188,7 +188,7 @@ function setupShaders() {
     gl.getUniformLocation(shaderProgram, "kSpecular");
   shaderProgram.locations.shininess =
     gl.getUniformLocation(shaderProgram, "shininess");
-  
+
   shaderProgram.locations.lightPosition =
     gl.getUniformLocation(shaderProgram, "lightPosition");
   shaderProgram.locations.ambientLightColor =
@@ -211,10 +211,10 @@ function draw(currentTime) {
   // Generate the projection matrix using perspective projection.
   const near = 0.1;
   const far = 200.0;
-  glMatrix.mat4.perspective(projectionMatrix, degToRad(45), 
+  glMatrix.mat4.perspective(projectionMatrix, degToRad(45),
                             gl.viewportWidth / gl.viewportHeight,
                             near, far);
-  
+
   // Generate the view matrix using lookat.
 
   // calculate eye Pt factor & referenced by MP1.js
@@ -240,14 +240,14 @@ function draw(currentTime) {
   setMatrixUniforms();
   setLightUniforms(ambientLightColor, diffuseLightColor, specularLightColor,
                    lightPosition);
-  
+
   // Draw the triangles, the wireframe, or both, based on the render selection.
-  if (document.getElementById("polygon").checked) { 
+  if (document.getElementById("polygon").checked) {
     setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     myTerrain.drawTriangles();
   }
   else if (document.getElementById("wirepoly").checked) {
-    setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess); 
+    setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(1, 1);
     myTerrain.drawTriangles();
@@ -318,6 +318,6 @@ function setLightUniforms(a, d, s, loc) {
  function animate(currentTime) {
   // Draw the frame.
   draw(currentTime);
-  // Animate the next frame. 
+  // Animate the next frame.
   requestAnimationFrame(animate);
 }
