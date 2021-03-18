@@ -81,7 +81,7 @@ function startup() {
   setupShaders();
 
   // Let the Terrain object set up its own buffers.
-  myTerrain = new Terrain(84, -1, 1, -1, 1);
+  myTerrain = new Terrain(64, -1, 1, -1, 1);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
@@ -125,9 +125,9 @@ function loadShaderFromDOM(id) {
   var shaderSource = shaderScript.text;
 
   var shader;
-  if (shaderScript.type == "x-shader/x-fragment") {
+  if (shaderScript.type === "x-shader/x-fragment") {
     shader = gl.createShader(gl.FRAGMENT_SHADER);
-  } else if (shaderScript.type == "x-shader/x-vertex") {
+  } else if (shaderScript.type === "x-shader/x-vertex") {
     shader = gl.createShader(gl.VERTEX_SHADER);
   } else {
     return null;
@@ -197,13 +197,20 @@ function setupShaders() {
   gl.getUniformLocation(shaderProgram, "diffuseLightColor");
   shaderProgram.locations.specularLightColor =
   gl.getUniformLocation(shaderProgram, "specularLightColor");
+
+  // add maxZ and minZ
+  shaderProgram.locations.minZ =
+  gl.getUniformLocation(shaderProgram, "minZ");
+
+  shaderProgram.locations.maxZ =
+  gl.getUniformLocation(shaderProgram, "maxZ");
 }
 
 /**
  * Draws the terrain to the screen.
  */
 function draw(currentTime) {
-  // Transform the clip coordinates so the render fills the canvas dimensions.
+// Transform the clip coordinates so the render fills the canvas dimensions.
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   // Clear the color buffer and the depth buffer.
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -218,19 +225,20 @@ function draw(currentTime) {
   // Generate the view matrix using lookat.
 
   // calculate eye Pt factor & referenced by MP1.js
-  var deltaTime = currentTime * 0.0001 - previousTime;
+  let deltaTime = currentTime * 0.0001 - previousTime;
   previousTime = currentTime * 0.0001;
   rotAngle = (rotAngle + deltaTime) % 360;
-  eyeXPos = 2.5 * Math.cos(rotAngle);
-  eyeYPos = 2.5 * Math.sin(rotAngle);
-  eyeXPos_ = 2.5 * Math.cos(-rotAngle);
-  eyeYPos_ = 2.5 * Math.sin(-rotAngle);
-  var intCurTime = Math.round(currentTime);
+  let eyeXPos = 2.5 * Math.cos(rotAngle);
+  let eyeYPos = 2.5 * Math.sin(rotAngle);
+  let eyeXPos_ = 2.5 * Math.cos(-rotAngle);
+  let eyeYPos_ = 2.5 * Math.sin(-rotAngle);
+  let intCurTime = Math.round(currentTime);
+  let eyePt;
 
   if(intCurTime % 10000 < 5000) {
-    var eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 0.8);
+    eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 0.8);
   } else {
-    var eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 0.8);
+    eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 0.8);
   }
 
   const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
@@ -243,10 +251,12 @@ function draw(currentTime) {
 
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
+    setMaxMinElevationUniforms();
     setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     myTerrain.drawTriangles();
   }
   else if (document.getElementById("wirepoly").checked) {
+    setMaxMinElevationUniforms();
     setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(1, 1);
@@ -256,6 +266,7 @@ function draw(currentTime) {
     myTerrain.drawEdges();
   }
   else if (document.getElementById("wireframe").checked) {
+    setMaxMinElevationUniforms();
     setMaterialUniforms(kEdgeBlack, kEdgeBlack, kEdgeBlack, shininess);
     myTerrain.drawEdges();
   }
@@ -294,6 +305,17 @@ function setMaterialUniforms(a, d, s, alpha) {
   gl.uniform3fv(shaderProgram.locations.kDiffuse, d);
   gl.uniform3fv(shaderProgram.locations.kSpecular, s);
   gl.uniform1f(shaderProgram.locations.shininess, alpha);
+}
+
+
+/**
+ * Set max and min elevation uniforms
+ */
+function setMaxMinElevationUniforms() {
+  let minZ = myTerrain.getMinElevation();
+  let maxZ = myTerrain.getMaxElevation();
+  gl.uniform1f(shaderProgram.locations.minZ, minZ);
+  gl.uniform1f(shaderProgram.locations.maxZ, maxZ);
 }
 
 

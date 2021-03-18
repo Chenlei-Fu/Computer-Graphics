@@ -34,8 +34,15 @@ uniform mat3 normalMatrix;
 out vec3 vertexPositionView;
 out vec3 vertexNormalView;
 
+// send maxZ and minZ to vertex shader
+uniform float minZ;
+uniform float maxZ;
 
 void main(void) {
+    float  nrmZ = vertexPosition.z-minZ/(maxZ-minZ);
+
+
+
     // Transform the vertex position and normal to view coordinates
     vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
     vertexNormalView = normalize(normalMatrix * vertexNormal);

@@ -283,6 +283,35 @@ class Terrain {
         return res;
     }
 
+    /**
+     * Get the min Z coordinate in the terrain
+     * @return {number}
+     */
+    getMinElevation() {
+        let minZ = Number.MAX_VALUE;
+        for(let i = 0; i < this.numVertices; i++) {
+            let tmp = [0, 0, 0]
+            this.getVertex(tmp, i);
+            minZ = Math.min(minZ, tmp[2]);
+        }
+        return minZ;
+    }
+
+
+    /**
+     * Get the max Z coordinate in the terrain
+     * @return {number}
+     */
+    getMaxElevation() {
+        let maxZ = Number.MIN_VALUE;
+        for(let i = 0; i < this.numVertices; i++) {
+            let tmp = [0, 0, 0]
+            this.getVertex(tmp, i);
+            maxZ = Math.max(maxZ, tmp[2]);
+        }
+        return maxZ;
+    }
+
 
     //-------------------------------------------------------------------------
     // Setup code (run once)
@@ -420,9 +449,10 @@ class Terrain {
 } // class Terrain
 //
 
+// for test
 // var glMatrix = require('gl-matrix');
 // // const { mat4, vec3 } = gl;
-
+//
 // var terrain = new Terrain(2, 0, 4, 0, 4);
-// terrain.calculateNormals();
+// console.log(terrain.getMaxElevation(), terrain.getMinElevation());
 
