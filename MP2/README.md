@@ -30,3 +30,13 @@ For your second Machine Problem, you will procedurally model a piece of terrain.
 
 
 
+* 03/18
+
+  Finished  elevation-based colormap
+
+
+
+### Results
+
+![result](result.gif)
+

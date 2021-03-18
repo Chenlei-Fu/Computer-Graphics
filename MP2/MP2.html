@@ -33,15 +33,31 @@ uniform mat3 normalMatrix;
 // Send an interpolated position value from vertex shader to the fragment shader.
 out vec3 vertexPositionView;
 out vec3 vertexNormalView;
+out vec3 kAmbient;
+out vec3 kDiffuse;
 
 // send maxZ and minZ to vertex shader
 uniform float minZ;
 uniform float maxZ;
 
 void main(void) {
-    float  nrmZ = vertexPosition.z-minZ/(maxZ-minZ);
+    float  nrmZ = (vertexPosition.z-minZ)/(maxZ-minZ);
+    vec3 myColor;
+    if(nrmZ < 0.25) {
+        myColor = vec3(15.0/255.0, 78.0/255.0, 159.0/255.0);
+    }
+    else if (nrmZ < 0.5) {
+        myColor = vec3(3.0/255.0, 118.0/255.0, 61.0/255.0);
+    }
+    else if (nrmZ < 0.75) {
+        myColor = vec3(246.0/255.0, 114.0/255.0, 128.0/255.0);
+    }
+    else {
+        myColor = vec3(1.0, 1.0, 1.0);
+    }
 
-
+    kAmbient = myColor;
+    kDiffuse = myColor;
 
     // Transform the vertex position and normal to view coordinates
     vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
@@ -69,8 +85,8 @@ precision mediump float;
 in vec3 vertexNormalView;
 in vec3 vertexPositionView;
 
-uniform vec3 kAmbient;
-uniform vec3 kDiffuse;
+in vec3 kAmbient;
+in vec3 kDiffuse;
 uniform vec3 kSpecular;
 uniform float shininess;
 

@@ -81,7 +81,7 @@ function startup() {
   setupShaders();
 
   // Let the Terrain object set up its own buffers.
-  myTerrain = new Terrain(64, -1, 1, -1, 1);
+  myTerrain = new Terrain(128, -1, 1, -1, 1);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
@@ -236,9 +236,9 @@ function draw(currentTime) {
   let eyePt;
 
   if(intCurTime % 10000 < 5000) {
-    eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 0.8);
+    eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 1.3);
   } else {
-    eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 0.8);
+    eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 1.3);
   }
 
   const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
@@ -266,7 +266,6 @@ function draw(currentTime) {
     myTerrain.drawEdges();
   }
   else if (document.getElementById("wireframe").checked) {
-    setMaxMinElevationUniforms();
     setMaterialUniforms(kEdgeBlack, kEdgeBlack, kEdgeBlack, shininess);
     myTerrain.drawEdges();
   }

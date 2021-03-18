@@ -16,6 +16,7 @@
  * Good luck! Come to office hours if you get stuck!
  */
 
+
 class Terrain {
     /**
      * Initializes the members of the Terrain object.
@@ -130,9 +131,9 @@ class Terrain {
         // MP2: Implement this function!
 
         // set up some variables
-        let iter = 100
-        let delta = 0.01
-        let H = 0.0143
+        let iter = 200
+        let delta = 0.015
+        let H = 0.008
 
         for(let i = 0; i < iter; i++) {
             // construct a random fault plane
@@ -159,7 +160,7 @@ class Terrain {
 
                 this.setVertex(b, j);
             }
-            delta = delta / (2**H);
+            delta = delta / (Math.pow(2, H));
         }
     }
 
@@ -214,13 +215,12 @@ class Terrain {
             let indices = this.getTriangleVertexByIndex(i);
             let vertices = this.createAndGetPosDataByIndex(indices);
             let N = this.computeNormalForTriangles(vertices[0], vertices[1], vertices[2]);
-
             // average vertex normals by scale with factor 0.5
             glMatrix.vec3.scale(N, N, 0.5);
 
             indices.forEach(function(index) {
                 normals[index] = normals[index].map((a, i) => a + N[i]);
-            })
+            });
         }
 
         // normalize each normal in N array to unit length
@@ -450,9 +450,9 @@ class Terrain {
 //
 
 // for test
-// var glMatrix = require('gl-matrix');
-// // const { mat4, vec3 } = gl;
-//
-// var terrain = new Terrain(2, 0, 4, 0, 4);
-// console.log(terrain.getMaxElevation(), terrain.getMinElevation());
+var glMatrix = require('gl-matrix');
+// const { mat4, vec3 } = gl;
+
+var terrain = new Terrain(2, 0, 4, 0, 4);
+terrain.calculateNormals();
 
