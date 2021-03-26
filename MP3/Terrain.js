@@ -56,7 +56,7 @@ class Terrain {
         console.log("Terrain: Generated normals");
 
         // You can use this function for debugging your buffers:
-        this.printBuffers();
+        // this.printBuffers();
     }
 
 

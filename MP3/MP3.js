@@ -57,6 +57,33 @@ var previousTime = new Date().getTime() * 0.0001;
 /** @global rotation Angle */
 var rotAngle = 0;
 
+/** @global the camera's current position (eyePt) */
+var camPosition = glMatrix.vec3.fromValues(0, -1.8, 1.2);
+
+/** @global the camera's current orientation */
+var camOrientation = glMatrix.quat.create();
+
+/** @global the camera's current speed in the forward direction */
+var camSpeed = 0.0002; // should change
+
+/** @global the camera's initial view direction*/
+var camInitialDir = glMatrix.vec3.fromValues(0.0, 0.0, 0.25);
+
+/** @global The currently pressed keys */
+var keys = {};
+
+/** @global Position of the viewer */
+var eyePt = glMatrix.vec3.fromValues(0, -1.8, 1.2);
+
+/** @global Point the viewer is looking at */
+var lookAtPt = glMatrix.vec3.fromValues(0.0, 0, 0.25);
+
+/** @global vec3 pointing up */
+var up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
+
+var maxHeight = 0;
+
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -83,11 +110,14 @@ function startup() {
   // Let the Terrain object set up its own buffers.
   myTerrain = new Terrain(128, -1, 1, -1, 1);
   myTerrain.setupBuffers(shaderProgram);
+  maxHeight = myTerrain.getMaxElevation();
 
   // Set the background color to sky blue (you can change this if you like).
   gl.clearColor(0.82, 0.93, 0.99, 1.0);
 
   gl.enable(gl.DEPTH_TEST);
+  document.onkeydown = keyDown;
+  document.onkeyup = keyUp;
   requestAnimationFrame(animate);
 }
 
@@ -222,27 +252,9 @@ function draw(currentTime) {
                             gl.viewportWidth / gl.viewportHeight,
                             near, far);
 
+
   // Generate the view matrix using lookat.
-
-  // calculate eye Pt factor & referenced by MP1.js
-  let deltaTime = currentTime * 0.0001 - previousTime;
-  previousTime = currentTime * 0.0001;
-  rotAngle = (rotAngle + deltaTime) % 360;
-  let eyeXPos = 2.5 * Math.cos(rotAngle);
-  let eyeYPos = 2.5 * Math.sin(rotAngle);
-  let eyeXPos_ = 2.5 * Math.cos(-rotAngle);
-  let eyeYPos_ = 2.5 * Math.sin(-rotAngle);
-  let intCurTime = Math.round(currentTime);
-  let eyePt;
-
-  if(intCurTime % 10000 < 5000) {
-    eyePt = glMatrix.vec3.fromValues(eyeXPos, eyeYPos, 1.3);
-  } else {
-    eyePt = glMatrix.vec3.fromValues(eyeXPos_, eyeYPos_, 1.3);
-  }
-
-  const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
-  const up = glMatrix.vec3.fromValues(0.0, 0, 1.0);
+  handleSpeedKeys();
   glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
 
   setMatrixUniforms();
@@ -337,8 +349,81 @@ function setLightUniforms(a, d, s, loc) {
  * wireframe, polgon, or both.
  */
  function animate(currentTime) {
+  if (keys["="]) {
+    camSpeed += 0.0001;
+  }
+  if (keys["-"]) {
+    camSpeed -= 0.0001;
+  }
+
   // Draw the frame.
   draw(currentTime);
   // Animate the next frame.
   requestAnimationFrame(animate);
+}
+
+
+
+//-----------------------------------------------------------------------------
+// Event Handling Functions
+
+/**
+ * Logs keys as "down" when pressed
+ * setting to true when keys are pressed
+ * Referenced by
+ * 1. https://illinois-cs418.github.io/assignments/mp3.html
+ * 2. [418-18-1-interaction.pdf]
+ */
+function keyDown(event) {
+  console.log("Key up ", event.key, " code ", event.code);
+  if (event.key === "+" || event.key === "-" || event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Escape") {
+    event.preventDefault();
+  }
+  keys[event.key] = true;
+}
+
+
+/**
+ * Logs keys as "up" when pressed
+ * setting to false when no keys are pressed
+ * Referenced by
+ * https://illinois-cs418.github.io/assignments/mp3.html
+ */
+function keyUp(event) {
+  console.log("Key up ", event.key, " code ", event.code);
+  keys[event.key] = false;
+}
+
+
+
+/**
+ * Handle NumpadAdd and Minus keys
+ */
+function handleSpeedKeys() {
+  console.log(camPosition);
+  let change = glMatrix.vec3.create();
+  if(camPosition[2] < maxHeight && lookAtPt[2] < 0.3) {
+    lookAtPt[2] += camSpeed * 0.01;
+  }
+
+  glMatrix.vec3.scale(change, camPosition, -camSpeed);
+  glMatrix.vec3.add(camPosition, camPosition, change);
+  eyePt = glMatrix.vec3.clone(camPosition);
+}
+
+
+/**
+ * Generate updated view
+ */
+function generateUpdatedView() {
+  // use camPosition for the eye parameter
+  eyePt = glMatrix.vec3.clone(camPosition);
+
+  // compute up
+  up = glMatrix.vec3.set(up, 0.0, 1.0, 0.0);
+  glMatrix.vec3.transformQuat(up, up, camOrientation);
+
+  // compute center
+  glMatrix.vec3.transformQuat(camInitialDir, camInitialDir, camOrientation)
+  glMatrix.vec3.add(lookAtPt, camPosition, camInitialDir);
 }
