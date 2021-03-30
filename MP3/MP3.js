@@ -69,10 +69,10 @@ var camInitialDir = glMatrix.vec3.fromValues(0.0, 2.1, -1);
 var keys = {};
 
 /** @global degree to make the plane rool to its up */
-var rollDegree = 0;
+var eulerZ = 0;
 
 /** @global degree to cause the airplane to pitch up */
-var pitchDegree = 0;
+var eulerX = 0;
 
 /** @global the camera's current speed in the forward direction */
 var camSpeed = 0.0005; // should change
@@ -352,23 +352,23 @@ function setLightUniforms(a, d, s, loc) {
   }
   // roll to left
   if (keys["ArrowLeft"]) {
-    rollDegree -= degToRad(0.2);
-    handleArrowLeftRightKeys();
+    eulerZ -= 0.02;
+    handleEulerZAngles();
   }
   // roll to right
   if (keys["ArrowRight"]) {
-    rollDegree += degToRad(0.2);
-    handleArrowLeftRightKeys();
+    eulerZ += 0.02;
+    handleEulerZAngles();
   }
   // pitch up
   if (keys["ArrowUp"]) {
-    pitchDegree += degToRad(0.2);
-    handleArrowUpDownKeys();
+    eulerX += 0.02;
+    handleEulerXAngles()
   }
   // pitch down
   if (keys["ArrowDown"]) {
-    pitchDegree -= degToRad(0.2);
-    handleArrowUpDownKeys();
+    eulerX -= 0.02;
+    handleEulerXAngles();
   }
   // ESC
   if (keys["Escape"]) {
@@ -430,23 +430,22 @@ function handlePositionChanges() {
 
 
 /**
- * Handle Arrow Left and Arrow Right Keys
+ * Handle Arrow Left and Arrow Right Keys (Roll)
  */
-function handleArrowLeftRightKeys() {
-  let curViewDir = getCurViewDirection();
-  glMatrix.quat.setAxisAngle(camOrientation, curViewDir, rollDegree);
+function handleEulerZAngles() {
+  let orientationDelta = glMatrix.quat.create();
+  glMatrix.quat.fromEuler(orientationDelta, 0, 0, eulerZ);
+  glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
 }
 
 
 /**
- * Handle Arrow Up and Arrow Down Keys
+ * Handle Arrow Up and Down Right Keys (Pitch)
  */
-function handleArrowUpDownKeys() {
-  let curViewDir = getCurViewDirection();
-  let up = getCurUpVector();
-  let cross = glMatrix.vec3.create();
-  glMatrix.vec3.cross(cross, curViewDir, up);
-  glMatrix.quat.setAxisAngle(camOrientation, cross, pitchDegree);
+function handleEulerXAngles() {
+  let orientationDelta = glMatrix.quat.create();
+  glMatrix.quat.fromEuler(orientationDelta, eulerX, 0, 0);
+  glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
 }
 
 
@@ -457,8 +456,8 @@ function resetToInitialView() {
   camPosition = glMatrix.vec3.set(camPosition, 0, -1.8, 1.1);
   camOrientation = glMatrix.quat.identity(camOrientation);
   camInitialDir = glMatrix.vec3.set(camInitialDir, 0.0, 2.1, -1);
-  rollDegree = 0;
-  pitchDegree = 0;
+  eulerZ = 0;
+  eulerX = 0;
 }
 
 
