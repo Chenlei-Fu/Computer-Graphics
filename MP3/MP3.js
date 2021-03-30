@@ -336,8 +336,9 @@ function setLightUniforms(a, d, s, loc) {
  * wireframe, polgon, or both.
  */
  function animate(currentTime) {
-  let eulerZ = 0;
   let eulerX = 0;
+  let eulerY = 0;
+  let eulerZ = 0;
 
    // speed up
   if (keys["="]) {
@@ -350,27 +351,33 @@ function setLightUniforms(a, d, s, loc) {
   // roll to left
   if (keys["ArrowLeft"]) {
     eulerZ -= 0.1;
-    handleEulerZAngles(eulerZ);
   }
   // roll to right
   if (keys["ArrowRight"]) {
     eulerZ += 0.1;
-    handleEulerZAngles(eulerZ);
   }
   // pitch up
   if (keys["ArrowUp"]) {
     eulerX += 0.1;
-    handleEulerXAngles(eulerX)
   }
   // pitch down
   if (keys["ArrowDown"]) {
     eulerX -= 0.1;
-    handleEulerXAngles(eulerX);
+  }
+  // Yaw up
+  if (keys["a"]) {
+    eulerY += 1;
+  }
+  // Yaw Down
+  if (keys["d"]) {
+    eulerY -= 1;
   }
   // ESC
   if (keys["Escape"]) {
     resetToInitialView();
   }
+
+  handleEulerAngles(eulerX, eulerY, eulerZ);
 
   // Draw the frame.
   draw(currentTime);
@@ -427,25 +434,15 @@ function handlePositionChanges() {
 
 
 /**
- * Handle Arrow Left and Arrow Right Keys (Roll)
- * @param: euler Z
+ * Handle Euler Keys
+ * @param: euler X, euler Y, euler C coordinators
  */
-function handleEulerZAngles(eulerZ) {
+function handleEulerAngles(eulerX, eulerY, eulerZ) {
   let orientationDelta = glMatrix.quat.create();
-  glMatrix.quat.fromEuler(orientationDelta, 0, 0, eulerZ);
+  glMatrix.quat.fromEuler(orientationDelta, eulerX, eulerY, eulerZ);
   glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
 }
 
-
-/**
- * Handle Arrow Up and Down Right Keys (Pitch)
- * @param: euler X
- */
-function handleEulerXAngles(eulerX) {
-  let orientationDelta = glMatrix.quat.create();
-  glMatrix.quat.fromEuler(orientationDelta, eulerX, 0, 0);
-  glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
-}
 
 
 /**
