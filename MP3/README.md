@@ -20,4 +20,3 @@ The app will be rendering a view of the terrain from the perspective of someone 
 - Pressing the up (down) arrow key will cause the airplane to pitch up (down)
 - Pressing the + (-) key will increase (decrease) the airplane’s speed
 - Pressing the ESC key will reset the current view to the initial viewpoint and direction
-

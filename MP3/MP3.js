@@ -6,7 +6,6 @@
  *
  * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
  */
-
 /** @global The WebGL context */
 var gl;
 
@@ -58,30 +57,25 @@ var previousTime = new Date().getTime() * 0.0001;
 var rotAngle = 0;
 
 /** @global the camera's current position (eyePt) */
-var camPosition = glMatrix.vec3.fromValues(0, -1.8, 1.2);
+var camPosition = glMatrix.vec3.fromValues(0, -1.8, 1.1);
 
 /** @global the camera's current orientation */
 var camOrientation = glMatrix.quat.create();
 
-/** @global the camera's current speed in the forward direction */
-var camSpeed = 0.0002; // should change
-
 /** @global the camera's initial view direction*/
-var camInitialDir = glMatrix.vec3.fromValues(0.0, 0.0, 0.25);
+var camInitialDir = glMatrix.vec3.fromValues(0.0, 2.1, -1);
 
 /** @global The currently pressed keys */
 var keys = {};
 
-/** @global Position of the viewer */
-var eyePt = glMatrix.vec3.fromValues(0, -1.8, 1.2);
+/** @global degree to make the plane rool to its up */
+var rollDegree = 0;
 
-/** @global Point the viewer is looking at */
-var lookAtPt = glMatrix.vec3.fromValues(0.0, 0, 0.25);
+/** @global degree to cause the airplane to pitch up */
+var pitchDegree = 0;
 
-/** @global vec3 pointing up */
-var up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
-
-var maxHeight = 0;
+/** @global the camera's current speed in the forward direction */
+var camSpeed = 0.0005; // should change
 
 
 /**
@@ -110,7 +104,6 @@ function startup() {
   // Let the Terrain object set up its own buffers.
   myTerrain = new Terrain(128, -1, 1, -1, 1);
   myTerrain.setupBuffers(shaderProgram);
-  maxHeight = myTerrain.getMaxElevation();
 
   // Set the background color to sky blue (you can change this if you like).
   gl.clearColor(0.82, 0.93, 0.99, 1.0);
@@ -239,7 +232,7 @@ function setupShaders() {
 /**
  * Draws the terrain to the screen.
  */
-function draw(currentTime) {
+function draw() {
 // Transform the clip coordinates so the render fills the canvas dimensions.
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   // Clear the color buffer and the depth buffer.
@@ -253,9 +246,9 @@ function draw(currentTime) {
                             near, far);
 
 
-  // Generate the view matrix using lookat.
-  handleSpeedKeys();
-  glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
+  // Generate the view matrix using look at.
+  handlePositionChanges();
+  generateUpdatedView();
 
   setMatrixUniforms();
   setLightUniforms(ambientLightColor, diffuseLightColor, specularLightColor,
@@ -349,11 +342,37 @@ function setLightUniforms(a, d, s, loc) {
  * wireframe, polgon, or both.
  */
  function animate(currentTime) {
+   // speed up
   if (keys["="]) {
     camSpeed += 0.0001;
   }
+  // speed down
   if (keys["-"]) {
     camSpeed -= 0.0001;
+  }
+  // roll to left
+  if (keys["ArrowLeft"]) {
+    rollDegree -= degToRad(0.2);
+    handleArrowLeftRightKeys();
+  }
+  // roll to right
+  if (keys["ArrowRight"]) {
+    rollDegree += degToRad(0.2);
+    handleArrowLeftRightKeys();
+  }
+  // pitch up
+  if (keys["ArrowUp"]) {
+    pitchDegree += degToRad(0.2);
+    handleArrowUpDownKeys();
+  }
+  // pitch down
+  if (keys["ArrowDown"]) {
+    pitchDegree -= degToRad(0.2);
+    handleArrowUpDownKeys();
+  }
+  // ESC
+  if (keys["Escape"]) {
+    resetToInitialView();
   }
 
   // Draw the frame.
@@ -395,20 +414,51 @@ function keyUp(event) {
 }
 
 
+/**
+ * Handle Position Changes
+ */
+function handlePositionChanges() {
+  let forwardDirection = getCurViewDirection();
+
+  // 3. set deltaPosition to the forwardDirection scaled by camSpeed
+  let deltaPosition = glMatrix.vec3.create();
+  glMatrix.vec3.scale(deltaPosition, forwardDirection, camSpeed);
+  console.log("speed", camSpeed);
+  // Update camPosition
+  glMatrix.vec3.add(camPosition,camPosition,deltaPosition);
+}
+
 
 /**
- * Handle NumpadAdd and Minus keys
+ * Handle Arrow Left and Arrow Right Keys
  */
-function handleSpeedKeys() {
-  console.log(camPosition);
-  let change = glMatrix.vec3.create();
-  if(camPosition[2] < maxHeight && lookAtPt[2] < 0.3) {
-    lookAtPt[2] += camSpeed * 0.01;
-  }
+function handleArrowLeftRightKeys() {
+  let curViewDir = getCurViewDirection();
+  glMatrix.quat.setAxisAngle(camOrientation, curViewDir, rollDegree);
+}
 
-  glMatrix.vec3.scale(change, camPosition, -camSpeed);
-  glMatrix.vec3.add(camPosition, camPosition, change);
-  eyePt = glMatrix.vec3.clone(camPosition);
+
+/**
+ * Handle Arrow Up and Arrow Down Keys
+ */
+function handleArrowUpDownKeys() {
+  let curViewDir = getCurViewDirection();
+  let up = getCurUpVector();
+  let cross = glMatrix.vec3.create();
+  glMatrix.vec3.cross(cross, curViewDir, up);
+  glMatrix.quat.setAxisAngle(camOrientation, cross, pitchDegree);
+}
+
+
+/**
+ * reset the current view to the initial viewpoint and direction
+ */
+function resetToInitialView() {
+  camPosition = glMatrix.vec3.set(camPosition, 0, -1.8, 1.1);
+  camOrientation = glMatrix.quat.identity(camOrientation);
+  camInitialDir = glMatrix.vec3.set(camInitialDir, 0.0, 2.1, -1);
+  rollDegree = 0;
+  pitchDegree = 0;
 }
 
 
@@ -417,13 +467,38 @@ function handleSpeedKeys() {
  */
 function generateUpdatedView() {
   // use camPosition for the eye parameter
-  eyePt = glMatrix.vec3.clone(camPosition);
+  let eyePt = glMatrix.vec3.clone(camPosition);
 
   // compute up
-  up = glMatrix.vec3.set(up, 0.0, 1.0, 0.0);
-  glMatrix.vec3.transformQuat(up, up, camOrientation);
+  let up = getCurUpVector();
 
   // compute center
-  glMatrix.vec3.transformQuat(camInitialDir, camInitialDir, camOrientation)
-  glMatrix.vec3.add(lookAtPt, camPosition, camInitialDir);
+  let center = glMatrix.vec3.create();
+  let currentViewDir = getCurViewDirection();
+  glMatrix.vec3.add(center, camPosition, currentViewDir);
+
+  glMatrix.mat4.lookAt(modelViewMatrix, eyePt, center, up);
+}
+
+
+/**
+ * Get current view direction
+ * @return: current view direction (vec3)
+ */
+function getCurViewDirection() {
+  let currentViewDir = glMatrix.vec3.create();
+  console.log("camOrientation", camOrientation);
+  glMatrix.vec3.transformQuat(currentViewDir, camInitialDir, camOrientation)
+  glMatrix.vec3.normalize(currentViewDir, currentViewDir);
+  return currentViewDir;
+}
+
+/**
+ * Get current up vector
+ * @return {vec3} up vector
+ */
+function getCurUpVector() {
+  let up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
+  glMatrix.vec3.transformQuat(up, up, camOrientation);
+  return up;
 }
