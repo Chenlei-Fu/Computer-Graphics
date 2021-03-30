@@ -68,12 +68,6 @@ var camInitialDir = glMatrix.vec3.fromValues(0.0, 2.1, -1);
 /** @global The currently pressed keys */
 var keys = {};
 
-/** @global degree to make the plane rool to its up */
-var eulerZ = 0;
-
-/** @global degree to cause the airplane to pitch up */
-var eulerX = 0;
-
 /** @global the camera's current speed in the forward direction */
 var camSpeed = 0.0005; // should change
 
@@ -342,6 +336,9 @@ function setLightUniforms(a, d, s, loc) {
  * wireframe, polgon, or both.
  */
  function animate(currentTime) {
+  let eulerZ = 0;
+  let eulerX = 0;
+
    // speed up
   if (keys["="]) {
     camSpeed += 0.0001;
@@ -352,23 +349,23 @@ function setLightUniforms(a, d, s, loc) {
   }
   // roll to left
   if (keys["ArrowLeft"]) {
-    eulerZ -= 0.02;
-    handleEulerZAngles();
+    eulerZ -= 0.1;
+    handleEulerZAngles(eulerZ);
   }
   // roll to right
   if (keys["ArrowRight"]) {
-    eulerZ += 0.02;
-    handleEulerZAngles();
+    eulerZ += 0.1;
+    handleEulerZAngles(eulerZ);
   }
   // pitch up
   if (keys["ArrowUp"]) {
-    eulerX += 0.02;
-    handleEulerXAngles()
+    eulerX += 0.1;
+    handleEulerXAngles(eulerX)
   }
   // pitch down
   if (keys["ArrowDown"]) {
-    eulerX -= 0.02;
-    handleEulerXAngles();
+    eulerX -= 0.1;
+    handleEulerXAngles(eulerX);
   }
   // ESC
   if (keys["Escape"]) {
@@ -431,8 +428,9 @@ function handlePositionChanges() {
 
 /**
  * Handle Arrow Left and Arrow Right Keys (Roll)
+ * @param: euler Z
  */
-function handleEulerZAngles() {
+function handleEulerZAngles(eulerZ) {
   let orientationDelta = glMatrix.quat.create();
   glMatrix.quat.fromEuler(orientationDelta, 0, 0, eulerZ);
   glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
@@ -441,8 +439,9 @@ function handleEulerZAngles() {
 
 /**
  * Handle Arrow Up and Down Right Keys (Pitch)
+ * @param: euler X
  */
-function handleEulerXAngles() {
+function handleEulerXAngles(eulerX) {
   let orientationDelta = glMatrix.quat.create();
   glMatrix.quat.fromEuler(orientationDelta, eulerX, 0, 0);
   glMatrix.quat.multiply(camOrientation, camOrientation, orientationDelta);
