@@ -50,12 +50,6 @@ var kEdgeBlack = [0.0, 0.0, 0.0];
 /** @global Edge color for white wireframe */
 var kEdgeWhite = [0.7, 0.7, 0.7];
 
-/** @global Previous time */
-var previousTime = new Date().getTime() * 0.0001;
-
-/** @global rotation Angle */
-var rotAngle = 0;
-
 /** @global the camera's current position (eyePt) */
 var camPosition = glMatrix.vec3.fromValues(0, -1.8, 1.1);
 
@@ -70,6 +64,7 @@ var keys = {};
 
 /** @global the camera's current speed in the forward direction */
 var camSpeed = 0.0005; // should change
+
 
 
 /**
@@ -221,6 +216,10 @@ function setupShaders() {
 
   shaderProgram.locations.maxZ =
   gl.getUniformLocation(shaderProgram, "maxZ");
+
+  // add fog
+  shaderProgram.locations.fog =
+      gl.getUniformLocation(shaderProgram, "fog");
 }
 
 /**
@@ -251,11 +250,13 @@ function draw() {
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
     setMaxMinElevationUniforms();
+    setFogKeyUniforms();
     setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     myTerrain.drawTriangles();
   }
   else if (document.getElementById("wirepoly").checked) {
     setMaxMinElevationUniforms();
+    setFogKeyUniforms();
     setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(1, 1);
@@ -314,6 +315,17 @@ function setMaxMinElevationUniforms() {
   let maxZ = myTerrain.getMaxElevation();
   gl.uniform1f(shaderProgram.locations.minZ, minZ);
   gl.uniform1f(shaderProgram.locations.maxZ, maxZ);
+}
+
+/**
+ * Set fog enable keys uniforms
+ */
+function setFogKeyUniforms() {
+  if(document.getElementById("fog").checked) {
+    gl.uniform1i(shaderProgram.locations.fog, 1);
+  } else {
+    gl.uniform1i(shaderProgram.locations.fog, 0);
+  }
 }
 
 
@@ -444,7 +456,6 @@ function handleEulerAngles(eulerX, eulerY, eulerZ) {
 }
 
 
-
 /**
  * reset the current view to the initial viewpoint and direction
  */
@@ -452,8 +463,6 @@ function resetToInitialView() {
   camPosition = glMatrix.vec3.set(camPosition, 0, -1.8, 1.1);
   camOrientation = glMatrix.quat.identity(camOrientation);
   camInitialDir = glMatrix.vec3.set(camInitialDir, 0.0, 2.1, -1);
-  eulerZ = 0;
-  eulerX = 0;
 }
 
 

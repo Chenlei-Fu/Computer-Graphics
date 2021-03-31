@@ -42,6 +42,7 @@ out vec3 kDiffuse;
 uniform float minZ;
 uniform float maxZ;
 
+
 void main(void) {
     float  nrmZ = (vertexPosition.z-minZ)/(maxZ-minZ);
     vec3 myColor;
@@ -97,7 +98,8 @@ uniform vec3 ambientLightColor;
 uniform vec3 diffuseLightColor;
 uniform vec3 specularLightColor;
 
-out vec4 fragmentColor;
+out vec4 outColor;
+uniform int fog;
 
 
 void main(void) {
@@ -118,19 +120,34 @@ void main(void) {
 
     // Sum up all three lighting components into the color for the vertex,
     // and send it to the fragment shader.
-    fragmentColor = vec4((  kAmbient * ambientLightColor
+    vec4 fragmentColor = vec4((  kAmbient * ambientLightColor
                         + kDiffuse * diffuseLightColor * diffuseWeight
                         + kSpecular * specularLightColor * specularWeight), 1.0);
+
+    // fog
+    if (fog == 1) {
+        #define LOG2 1.442695
+        vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+        float u_fogDensity = 0.3;
+        float fogDistance = length(vertexPositionView);
+        float fogAmount = exp2(-u_fogDensity * u_fogDensity * fogDistance * fogDistance * LOG2);
+        fogAmount = clamp(fogAmount, 0.0, 1.0);
+        outColor = mix(color, fragmentColor, fogAmount);
+    } else {
+        outColor = fragmentColor;
+    }
 }
 </script>
 
 
 <body onload="startup();" class="container">
     <canvas id="glCanvas" width="1000" height="600" style="margin: auto; padding: 0; display: block"></canvas>
-
+    <h3 style="margin: 50px auto 20px auto; text-align: center;">CS418-MP3</h3>
     <form id="input_form">
-        <fieldset style="margin: 50px auto 20px auto; text-align: center;">
-            <h2>Rendering Options</h2>
+        <fieldset style="margin: 50px auto 20px auto">
+            <p class="lead">
+                🧩 Rendering Options
+            </p>
             <div class="col-sm" style="margin: 20px auto;">
                 <input type="radio" name="primitive" id="wireframe" value="wireframe"> Wireframe
                 <input type="radio" name="primitive" id="polygon" value="polygon" checked> Polygon
@@ -139,8 +156,10 @@ void main(void) {
         </fieldset>
     </form>
 
-    <table class="table table-striped caption-top">
-        <caption>Control Keys:</caption>
+    <table class="table table-striped">
+        <p class="lead">
+            🔑 Control Keys
+        </p>
         <thead>
           <tr>
             <th scope="col">#</th>
@@ -176,6 +195,16 @@ void main(void) {
           </tr>
         </tbody>
       </table>
+    <div style="margin: 50px auto">
+        <p class="lead">
+            ☁️ Rendering Depth Fog
+        </p>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="fog" name="fog" checked>
+            <label class="form-check-label" for="fog">Enable Fog</label>
+        </div>
+    </div>
+
 </body>
 
 </html>
