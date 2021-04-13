@@ -1,0 +1,117 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head>
+<title>MP4: Texture Mapping</title>
+<meta charset="utf-8"> 
+</head>
+
+<!-- If you add additional .js files, be sure to add them here. -->
+<script src="gl-matrix-min.js"></script>
+<script src="TriMesh.js"></script>
+<script src="MP4.js"></script>
+
+<!-- MP2: Modify the shaders to implement Phong shading instead of Gourand! -->
+<script id="shader-vs" type="x-shader/x-vertex">#version 300 es
+// Vertex Shader
+// Implements Phong shading. See the lecture on "Basic Shading" for details.
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+in vec3 vertexPosition;
+in vec3 vertexNormal;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat3 normalMatrix;
+
+out vec3 fragPosition;
+out vec3 fragNormal;
+
+
+void main(void) {
+    // Transform the vertex position and normal to view coordinates
+    fragPosition =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
+    fragNormal = normalize(normalMatrix * vertexNormal);
+
+    
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
+}
+</script>
+
+<!-- MP2: Modify the shaders to implement Phong shading instead of Gourand! -->
+<script id="shader-fs" type="x-shader/x-fragment">#version 300 es
+// Fragment Shader
+// Implements Phong shading. See the lecture on "Basic Shading" for details.
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+uniform vec3 kAmbient;
+uniform vec3 kDiffuse;
+uniform vec3 kSpecular;
+uniform float shininess;
+
+uniform vec3 lightPosition;
+uniform vec3 ambientLightColor;
+uniform vec3 diffuseLightColor;
+uniform vec3 specularLightColor;
+
+in vec3 fragPosition;
+in vec3 fragNormal;
+
+out vec4 fragmentColor;
+
+
+void main(void) {
+    // The camera is at the origin in view coordinates
+    vec3 cameraPositionView = vec3(0.0, 0.0, 0.0);
+    
+    vec3 nFragNormal = normalize(fragNormal);
+
+    // Calculate the three other vectors we need: l, r, and v
+    vec3 lightVector = normalize(lightPosition - fragPosition);
+    vec3 reflectionVector = normalize(reflect(-lightVector, nFragNormal));
+    vec3 viewVector = normalize(cameraPositionView - fragPosition);
+
+    // Calculate diffuse light weighting: (n dot l)
+    float diffuseWeight = max(dot(nFragNormal, lightVector), 0.0);
+    
+    // Calculate the specular light weighting: (r dot v)^(shininess)
+    float rDotV = max(dot(reflectionVector, viewVector), 0.0);
+    float specularWeight = pow(rDotV, shininess);
+
+    // Sum up all three lighting components into the color for the vertex,
+    // and send it to the fragment shader.
+    fragmentColor = vec4((  kAmbient * ambientLightColor
+                        + kDiffuse * diffuseLightColor * diffuseWeight
+                        + kSpecular * specularLightColor * specularWeight), 1.0);
+
+}
+</script>
+
+
+<body onload="startup();">
+    <canvas id="glCanvas" width="1200" height="600"></canvas>
+
+    <form id="input_form">
+        <fieldset>
+            <legend>Rendering Options</legend>
+            <div>
+                <input type="radio" name="primitive" id="wireframe" value="wireframe"> Wireframe
+                <input type="radio" name="primitive" id="polygon" value="polygon" checked> Polygon
+                <input type="radio" name="primitive" id="wirepoly" value="wirepoly" > Polygon with Edges
+            </div>
+        </fieldset>
+    </form>
+</body>
+
+</html>
