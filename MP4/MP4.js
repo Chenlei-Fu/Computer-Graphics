@@ -61,6 +61,17 @@ var kEdgeBlack = [0.0, 0.0, 0.0];
 /** @global Edge color for white wireframe */
 var kEdgeWhite = [0.7, 0.7, 0.7];
 
+// Texture
+/** @global Image texture to mapped onto mesh */
+var texture;
+/** @global Is a mouse button pressed? */
+var isDown = false;
+/** @global Mouse coordinates */
+var x = -1;
+var y = -1;
+/** @global Accumulated rotation around Y in degrees */
+var rotY = 0;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -98,6 +109,37 @@ function startup() {
   gl.clearColor(0.82, 0.93, 0.99, 1.0);
 
   gl.enable(gl.DEPTH_TEST);
+    
+  // Load a texture
+  loadTexture("brick.jpeg");
+  // Tell WebGL we want to affect texture unit 0
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind the texture to texture unit 0
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  // Tell the shader we bound the texture to texture unit 0
+  gl.uniform1i(shaderProgram.locations.uSampler, 0);
+    
+  canvas.addEventListener('mousedown', e => {
+    x = e.offsetX;
+    y = e.offsetY;
+    isDown = true;
+  });
+    
+
+  canvas.addEventListener('mouseup', e => {
+    x = -1;
+    y = -1;
+    isDown = false;
+  });
+    
+  canvas.addEventListener('mousemove', e => {
+    if(isDown === true) {
+      rotY += e.offsetX - x;
+      x = e.offsetX;
+      y = e.offsetY;
+    }
+  });
+    
   requestAnimationFrame(animate);
 }
 
@@ -207,6 +249,10 @@ function setupShaders() {
   gl.getUniformLocation(shaderProgram, "diffuseLightColor");
   shaderProgram.locations.specularLightColor =
   gl.getUniformLocation(shaderProgram, "specularLightColor");
+
+  shaderProgram.locations.uSampler =
+  gl.getUniformLocation(shaderProgram, "u_texture");
+
 }
 
 /**
@@ -220,9 +266,9 @@ function draw() {
   
   // Generate the view matrix using lookat.
   glMatrix.mat4.identity(modelViewMatrix);
+  glMatrix.mat4.rotateY(modelViewMatrix,myMesh.getModelTransform(),degToRad(rotY));
   glMatrix.mat4.lookAt(viewMatrix, eyePt, lookAtPt, up);
-  glMatrix.mat4.multiply(modelViewMatrix,  viewMatrix,myMesh.getModelTransform());
-    
+  glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelViewMatrix);
       
   setMatrixUniforms();
   setLightUniforms(ambientLightColor, diffuseLightColor, specularLightColor,
@@ -309,4 +355,30 @@ function setLightUniforms(a, d, s, loc) {
   }
   // Animate the next frame. 
   requestAnimationFrame(animate);
+}
+
+/**
+ * Load a texture from an image.
+ */
+
+function loadTexture(filename){
+	// Create a texture.
+	texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+ 
+	// Fill the texture with a 1x1 blue pixel.
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+              new Uint8Array([0, 0, 255, 255]));
+ 
+	// Asynchronously load an image
+	// If image load unsuccessful, it will be a blue surface
+	var image = new Image();
+	image.src = filename;
+	image.addEventListener('load', function() {
+  		// Now that the image has loaded make copy it to the texture.
+  		gl.bindTexture(gl.TEXTURE_2D, texture);
+  		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
+  		gl.generateMipmap(gl.TEXTURE_2D);
+  		console.log("loaded ", filename);
+		});
 }

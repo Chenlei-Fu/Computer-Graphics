@@ -32,6 +32,8 @@ uniform mat3 normalMatrix;
 out vec3 fragPosition;
 out vec3 fragNormal;
 
+out vec2 v_texcoord;
+
 
 void main(void) {
     // Transform the vertex position and normal to view coordinates
@@ -40,6 +42,8 @@ void main(void) {
 
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
+    
+    v_texcoord = vertexPosition.xy;
 }
 </script>
 
@@ -70,8 +74,14 @@ in vec3 fragNormal;
 
 out vec4 fragmentColor;
 
+uniform sampler2D u_texture;
+in vec2 v_texcoord;
+
 
 void main(void) {
+    // Sample the texture
+    vec4 texColor = texture(u_texture, v_texcoord);
+    
     // The camera is at the origin in view coordinates
     vec3 cameraPositionView = vec3(0.0, 0.0, 0.0);
     
@@ -91,8 +101,8 @@ void main(void) {
 
     // Sum up all three lighting components into the color for the vertex,
     // and send it to the fragment shader.
-    fragmentColor = vec4((  kAmbient * ambientLightColor
-                        + kDiffuse * diffuseLightColor * diffuseWeight
+    fragmentColor = vec4((  texColor.rgb * ambientLightColor
+                        + texColor.rgb * diffuseLightColor * diffuseWeight
                         + kSpecular * specularLightColor * specularWeight), 1.0);
 
 }

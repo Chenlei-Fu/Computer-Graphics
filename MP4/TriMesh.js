@@ -355,8 +355,7 @@ class TriMesh{
     * Genrate a transormationmatrix this.modelMatrix=ST 
     * T translates so that the AABB is at the origin
     * S scales uniformly by 1/L where L is the longest side of the AABB
-    */    
-    
+    */ 
     canonicalTransform(){
         let L = 0;
         let transVec = glMatrix.vec3.create();
