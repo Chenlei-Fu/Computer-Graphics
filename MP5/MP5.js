@@ -3,9 +3,10 @@
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP5 at the University of Illinois at
  * Urbana-Champaign.
- * 
+ *
  * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
  */
+
 
 /** @global The WebGL context */
 var gl;
@@ -45,6 +46,16 @@ const lDiffuse = [1.0, 1.0, 1.0];
 /** @global Specular  light color */
 const lSpecular = [1.0, 1.0, 1.0];
 
+/** @global array of particles */
+var particles = [];
+
+/** @global number of particles */
+var numParticles = 2;
+
+/** @global The currently pressed keys */
+var keys = {};
+
+
 
 /**
  * Translates degrees to radians
@@ -71,18 +82,28 @@ function startup() {
   // Create a sphere mesh and set up WebGL buffers for it.
   sphere1 = new Sphere(5);
   sphere1.setupBuffers(shaderProgram);
-  
+
   // Create the projection matrix with perspective projection.
   const near = 0.1;
   const far = 200.0;
-  glMatrix.mat4.perspective(projectionMatrix, degToRad(45), 
+  glMatrix.mat4.perspective(projectionMatrix, degToRad(45),
                             gl.viewportWidth / gl.viewportHeight,
                             near, far);
-    
-  // Set the background color to black (you can change this if you like).    
+
+  // Set the background color to black (you can change this if you like).
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
+  gl.frontFace(gl.CW);
+
+  // add particles
+  for(let i = 0; i < numParticles; i++) {
+    particles.push(new Particle());
+  }
+
+  // set up user interaction
+  document.onkeydown = keyDown;
+  document.onkeyup = keyUp;
 
   // Start animating.
   requestAnimationFrame(animate);
@@ -113,31 +134,31 @@ function createGLContext(canvas) {
  */
 function loadShaderFromDOM(id) {
   var shaderScript = document.getElementById(id);
-    
+
   // Return null if we don't find an element with the specified id
   if (!shaderScript) {
     return null;
   }
-    
+
   var shaderSource = shaderScript.text;
-  
+
   var shader;
-  if (shaderScript.type == "x-shader/x-fragment") {
+  if (shaderScript.type === "x-shader/x-fragment") {
     shader = gl.createShader(gl.FRAGMENT_SHADER);
-  } else if (shaderScript.type == "x-shader/x-vertex") {
+  } else if (shaderScript.type === "x-shader/x-vertex") {
     shader = gl.createShader(gl.VERTEX_SHADER);
   } else {
     return null;
   }
-  
+
   gl.shaderSource(shader, shaderSource);
   gl.compileShader(shader);
-  
+
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert(gl.getShaderInfoLog(shader));
     return null;
-  } 
-  return shader; 
+  }
+  return shader;
 }
 
 
@@ -148,7 +169,7 @@ function setupShaders() {
   // Compile the shaders' source code.
   vertexShader = loadShaderFromDOM("shader-vs");
   fragmentShader = loadShaderFromDOM("shader-fs");
-  
+
   // Link the shaders together into a program.
   shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
@@ -185,7 +206,7 @@ function setupShaders() {
     gl.getUniformLocation(shaderProgram, "kSpecular");
   shaderProgram.locations.shininess =
     gl.getUniformLocation(shaderProgram, "shininess");
-  
+
   shaderProgram.locations.lightPosition =
     gl.getUniformLocation(shaderProgram, "lightPosition");
   shaderProgram.locations.ambientLightColor =
@@ -201,23 +222,25 @@ function setupShaders() {
 /**
  * Draws the current frame and then requests to draw the next frame.
  * @param {number} currentTime The elapsed time in milliseconds since the
- *    webpage loaded. 
+ *    webpage loaded.
  */
 function animate(currentTime) {
   // Add code here using currentTime if you want to add animations
+  // handleControllers();
 
   // Set up the canvas for this frame
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  
+
   var modelMatrix = glMatrix.mat4.create();
   var viewMatrix = glMatrix.mat4.create();
 
   // Create the view matrix using lookat.
   const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
   const eyePt = glMatrix.vec3.fromValues(0.0, 0.0, 10.0);
-  const up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0); 
+  const up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
   glMatrix.mat4.lookAt(viewMatrix, eyePt, lookAtPt, up);
+
 
   // Concatenate the model and view matrices.
   // Remember matrix multiplication order is important.
@@ -232,12 +255,32 @@ function animate(currentTime) {
   setLightUniforms(lAmbient, lDiffuse, lSpecular, lightPosition);
   setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
 
-  // You can draw multiple spheres by changing the modelViewMatrix, calling
-  // setMatrixUniforms() again, and calling gl.drawArrays() again for each
-  // sphere. You can use the same sphere object and VAO for all of them,
-  // since they have the same triangle mesh.
   sphere1.bindVAO();
-  gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles*3);
+
+  // reference a little from campuswire https://campuswire.com/c/G2964AC2F/feed/324
+  let T = glMatrix.mat4.create(), S = glMatrix.mat4.create();
+  for(let i = 0; i < numParticles; i++) {
+    console.log((numParticles));
+    // modify model Matrix for particles
+    glMatrix.mat4.fromTranslation(T, particles[i].position);
+    glMatrix.mat4.fromScaling(S,
+        glMatrix.vec3.fromValues(particles[i].radius,particles[i].radius,particles[i].radius)
+    );
+    glMatrix.mat4.multiply(modelMatrix, T, S);
+    // Concatenate the model and view matrices.
+    // Remember matrix multiplication order is important.
+    glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelMatrix);
+
+    kAmbient = particles[i].color;
+    kDiffuse = particles[i].color;
+
+    // set uniform
+    setMatrixUniforms();
+    setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
+
+    // draw sphere
+    gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles*3);
+  }
   sphere1.unbindVAO();
 
   // Use this function as the callback to animate the next frame.
@@ -294,3 +337,51 @@ function setLightUniforms(a, d, s, loc) {
   gl.uniform3fv(shaderProgram.locations.lightPosition, loc);
 }
 
+
+//-----------------------------------------------------------------------------
+// User Interaction
+
+/**
+ * Logs keys as "down" when pressed
+ * setting to true when keys are pressed
+ * Referenced by
+ * 1. https://illinois-cs418.github.io/assignments/mp3.html
+ * 2. [418-18-1-interaction.pdf]
+ */
+function keyDown(event) {
+  console.log("Key up ", event.key, " code ", event.code);
+  if (event.key === "a" || event.key === "d") {
+    event.preventDefault();
+  }
+  keys[event.key] = true;
+  handleControllers();
+}
+
+
+/**
+ * Logs keys as "up" when pressed
+ * setting to false when no keys are pressed
+ * Referenced by
+ * https://illinois-cs418.github.io/assignments/mp3.html
+ */
+function keyUp(event) {
+  console.log("Key Down ", event.key, " code ", event.code);
+  keys[event.key] = false;
+}
+
+
+/**
+ * Handle Controllers
+ * A: add one particles
+ * D: delete all particles
+ */
+function handleControllers() {
+  if(keys["a"]) {
+    numParticles += 1;
+    particles.push(new Particle());
+  }
+  if(keys["d"]) {
+    numParticles = 0;
+    particles = [];
+  }
+}

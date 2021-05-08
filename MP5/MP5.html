@@ -1,14 +1,17 @@
-<!DOCTYPE HTML> 
-<html lang="en"> 
+<!DOCTYPE HTML>
+<html lang="en">
 <head>
 <title>MP5: Physics!</title>
-<meta charset="utf-8"> 
+<meta charset="utf-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
 </head>
 
 <!-- If you add additional .js files, be sure to add them here. -->
 <script src="gl-matrix-min.js"></script>
 <script src="Sphere.js"></script>
 <script src="MP5.js"></script>
+<script src="Particle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
 
 <!-- Modify to include diffuse material color as an attribute! -->
 <script id="shader-vs" type="x-shader/x-vertex">#version 300 es
@@ -41,7 +44,7 @@ void main(void) {
 
 <!-- Fragment shader: does basic Blinn-Phong shading. -->
 <script id="shader-fs" type="x-shader/x-fragment">#version 300 es
-    
+
 // Use high-precision floats if available on this device.
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -71,7 +74,7 @@ void main(void) {
 
     float diffuseWeight = max(dot(nFragNormal, lightDir), 0.0);
     float specularWeight = pow(max(dot(nFragNormal, halfwayDir), 0.0), shininess);
-    
+
     fragColor = vec4((  kAmbient * ambientLightColor
                       + kDiffuse * diffuseLightColor * diffuseWeight
                       + kSpecular * specularLightColor * specularWeight), 1.0);
@@ -79,8 +82,33 @@ void main(void) {
 </script>
 
 
-<body onload="startup();">
-    <canvas id="glCanvas" width="600" height="600"></canvas>
+<body onload="startup();" class="container">
+    <canvas id="glCanvas" width="800" height="600" style="margin: auto; padding: 0; display: block"></canvas>
+    <h3 style="margin: 50px auto 20px auto; text-align: center;">CS418-MP5</h3>
+    <table class="table table-striped">
+        <p class="lead">
+            🔑 Control Keys
+        </p>
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Controllers</th>
+            <th scope="col">Features</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row">1</th>
+            <td>A</td>
+            <td>Add one more particle</td>
+        </tr>
+        <tr>
+            <th scope="row">1</th>
+            <td>D</td>
+            <td>Delete all particles</td>
+        </tr>
+        </tbody>
+    </table>
 </body>
 
 </html>
