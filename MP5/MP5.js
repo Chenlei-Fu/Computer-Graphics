@@ -50,11 +50,13 @@ const lSpecular = [1.0, 1.0, 1.0];
 var particles = [];
 
 /** @global number of particles */
-var numParticles = 2;
+var numParticles = 8;
 
 /** @global The currently pressed keys */
 var keys = {};
 
+/** @global Records time last frame was rendered */
+var previousTime = 0;
 
 
 /**
@@ -226,7 +228,6 @@ function setupShaders() {
  */
 function animate(currentTime) {
   // Add code here using currentTime if you want to add animations
-  // handleControllers();
 
   // Set up the canvas for this frame
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -253,26 +254,29 @@ function animate(currentTime) {
   glMatrix.vec3.transformMat4(lightPosition, lightPosition, viewMatrix);
 
   setLightUniforms(lAmbient, lDiffuse, lSpecular, lightPosition);
-  setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
 
   sphere1.bindVAO();
 
   // reference a little from campuswire https://campuswire.com/c/G2964AC2F/feed/324
   let T = glMatrix.mat4.create(), S = glMatrix.mat4.create();
+  let deltaTime = getDeltaTime(currentTime);
   for(let i = 0; i < numParticles; i++) {
-    console.log((numParticles));
+    let curParticle = particles[i];
+    // update
+    curParticle.updateVelocity(deltaTime);
+    curParticle.updatePosition(deltaTime);
     // modify model Matrix for particles
-    glMatrix.mat4.fromTranslation(T, particles[i].position);
+    glMatrix.mat4.fromTranslation(T, curParticle.position);
     glMatrix.mat4.fromScaling(S,
-        glMatrix.vec3.fromValues(particles[i].radius,particles[i].radius,particles[i].radius)
+        glMatrix.vec3.fromValues(curParticle.radius,curParticle.radius,curParticle.radius)
     );
     glMatrix.mat4.multiply(modelMatrix, T, S);
     // Concatenate the model and view matrices.
     // Remember matrix multiplication order is important.
     glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelMatrix);
 
-    kAmbient = particles[i].color;
-    kDiffuse = particles[i].color;
+    kAmbient = curParticle.color;
+    kDiffuse = curParticle.color;
 
     // set uniform
     setMatrixUniforms();
@@ -384,4 +388,19 @@ function handleControllers() {
     numParticles = 0;
     particles = [];
   }
+}
+
+
+/**
+ * Get Delta Time
+ * @param currentTime
+ */
+function getDeltaTime(currentTime) {
+  // Convert the time to seconds.
+  currentTime *= 0.001;
+  // Subtract the previous time from the current time.
+  let deltaTime = currentTime - previousTime;
+  // Remember the current time for the next frame.
+  previousTime = currentTime;
+  return deltaTime;
 }
